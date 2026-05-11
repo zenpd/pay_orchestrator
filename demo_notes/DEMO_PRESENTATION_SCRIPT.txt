@@ -1,0 +1,14 @@
+================================================================================
+PAYMENT ORCHESTRATOR - DEMO PRESENTATION SCRIPT
+Interactive Walkthrough with Explanations
+Standard Bank / ZenLabs - October 2025
+================================================================================
+
+🎬 TOTAL DURATION: 20-25 minutes
+📊 6 Payment Scenarios + Architecture + Metrics Review
+
+This script provides detailed explanations for each demo scenario to help
+you present the Payment Orchestrator effectively.
+
+================================================================================
+See full script in the file...

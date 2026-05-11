@@ -1,0 +1,18 @@
+# Payment Orchestrator POC Requirements
+
+# Core dependencies
+langgraph>=0.0.25
+langchain>=0.1.0
+langchain-core>=0.1.0
+
+# For production deployment (optional for POC)
+# ollama>=0.1.0  # For self-hosted LLM inference
+# tensorflow>=2.13.0  # For ML models
+# redis>=4.5.0  # For FX rate caching
+# neo4j>=5.9.0  # For corridor relationship graph
+# psycopg2-binary>=2.9.0  # For PostgreSQL
+# mlflow>=2.7.0  # For model registry
+# prometheus-client>=0.17.0  # For metrics
+
+# Development
+python-dateutil>=2.8.0
