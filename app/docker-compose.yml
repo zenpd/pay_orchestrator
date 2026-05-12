@@ -1,6 +1,37 @@
 version: "3.9"
 
 services:
+  # ============================================================
+  # MULTI-REGION MODE (New - Recommended)
+  # ============================================================
+  
+  api-multiregion:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports: ["8000:8000", "8501:8501", "9001:9001"]
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - APP_MODE=multiregion
+    volumes: [.:/app]
+    depends_on: [postgres, redis]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks: [payment-network]
+    command: |
+      /bin/bash -c "
+      supervisord -c /etc/supervisor/conf.d/services.conf
+      "
+
+  # ============================================================
+  # ORIGINAL MODE (Legacy - Optional)
+  # ============================================================
+  
   ui:
     build: { context: ./ui, dockerfile: Dockerfile }
     ports: ["3000:80"]
@@ -10,6 +41,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    networks: [payment-network]
 
   api:
     build: { context: ., dockerfile: Dockerfile }
@@ -18,9 +50,11 @@ services:
     environment:
       - TEMPORAL_HOST=temporal:7233
       - REDIS_URL=redis://redis:6379
+      - APP_MODE=legacy
     depends_on: [postgres, redis, temporal]
     volumes: [.:/app]
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    networks: [payment-network]
 
   worker-payments:
     build: { context: ., dockerfile: Dockerfile }
@@ -28,11 +62,17 @@ services:
     environment:
       - TEMPORAL_HOST=temporal:7233
       - REDIS_URL=redis://redis:6379
+      - APP_MODE=legacy
     depends_on:
       temporal:
         condition: service_healthy
     restart: on-failure
     command: python -m workers.payment_worker
+    networks: [payment-network]
+
+  # ============================================================
+  # SHARED INFRASTRUCTURE
+  # ============================================================
 
   postgres:
     image: postgres:16-alpine
@@ -42,10 +82,22 @@ services:
       POSTGRES_PASSWORD: password
     volumes: [pgdata:/var/lib/postgresql/data]
     ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [payment-network]
 
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [payment-network]
 
   temporal:
     image: temporalio/auto-setup:1.24.2
@@ -67,6 +119,7 @@ services:
       timeout: 10s
       retries: 15
       start_period: 60s
+    networks: [payment-network]
 
   temporal-ui:
     image: temporalio/ui:2.26.2
@@ -76,6 +129,11 @@ services:
       - TEMPORAL_UI_CORS_ORIGINS=http://localhost:8080
       - TEMPORAL_UI_DEFAULT_NAMESPACE=pay_orchestrator
     depends_on: [temporal]
+    networks: [payment-network]
 
 volumes:
   pgdata:
+
+networks:
+  payment-network:
+    driver: bridge

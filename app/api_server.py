@@ -194,6 +194,179 @@ class MockDataSources:
             "capacity_per_hour": 1500,
             "availability": 0.93,
             "supported_corridors": ["ZA_BW", "ZA_ZW"]
+        },
+        # US Rails
+        "ACH": {
+            "type": "DOMESTIC_BATCH",
+            "success_rate": 0.99,
+            "avg_cost_usd": 0.25,
+            "speed_score": 40,
+            "cost_score": 95,
+            "max_amount": 25000,
+            "risk_level": "LOW",
+            "regulatory_overhead": "MEDIUM",
+            "capacity_per_hour": 50000,
+            "availability": 0.999,
+            "supported_corridors": ["US_US"]
+        },
+        "RTP": {
+            "type": "DOMESTIC_INSTANT",
+            "success_rate": 0.98,
+            "avg_cost_usd": 0.50,
+            "speed_score": 95,
+            "cost_score": 70,
+            "max_amount": 100000,
+            "risk_level": "LOW",
+            "regulatory_overhead": "LOW",
+            "capacity_per_hour": 10000,
+            "availability": 0.998,
+            "supported_corridors": ["US_US"]
+        },
+        "FedWire": {
+            "type": "CROSS_BORDER",
+            "success_rate": 0.998,
+            "avg_cost_usd": 15.00,
+            "speed_score": 90,
+            "cost_score": 30,
+            "max_amount": 10000000,
+            "risk_level": "VERY_LOW",
+            "regulatory_overhead": "HIGH",
+            "capacity_per_hour": 100,
+            "availability": 0.9999,
+            "supported_corridors": ["US_US", "US_MX"]
+        },
+        "WIRE": {
+            "type": "CROSS_BORDER",
+            "success_rate": 0.97,
+            "avg_cost_usd": 20.00,
+            "speed_score": 85,
+            "cost_score": 25,
+            "max_amount": 5000000,
+            "risk_level": "MEDIUM",
+            "regulatory_overhead": "MEDIUM",
+            "capacity_per_hour": 500,
+            "availability": 0.99,
+            "supported_corridors": ["US_US", "US_MX"]
+        },
+        "RIPPLE": {
+            "type": "CROSS_BORDER",
+            "success_rate": 0.95,
+            "avg_cost_usd": 5.00,
+            "speed_score": 92,
+            "cost_score": 80,
+            "max_amount": 1000000,
+            "risk_level": "MEDIUM",
+            "regulatory_overhead": "LOW",
+            "capacity_per_hour": 5000,
+            "availability": 0.97,
+            "supported_corridors": ["US_MX"]
+        },
+        # UK Rails
+        "FPS": {
+            "type": "DOMESTIC_INSTANT",
+            "success_rate": 0.99,
+            "avg_cost_usd": 0.15,
+            "speed_score": 98,
+            "cost_score": 85,
+            "max_amount": 250000,
+            "risk_level": "LOW",
+            "regulatory_overhead": "LOW",
+            "capacity_per_hour": 20000,
+            "availability": 0.999,
+            "supported_corridors": ["GB_GB"]
+        },
+        "CHAPS": {
+            "type": "DOMESTIC_INSTANT",
+            "success_rate": 0.998,
+            "avg_cost_usd": 25.00,
+            "speed_score": 85,
+            "cost_score": 20,
+            "max_amount": 10000000,
+            "risk_level": "VERY_LOW",
+            "regulatory_overhead": "HIGH",
+            "capacity_per_hour": 500,
+            "availability": 0.9999,
+            "supported_corridors": ["GB_GB"]
+        },
+        "Bacs": {
+            "type": "DOMESTIC_BATCH",
+            "success_rate": 0.99,
+            "avg_cost_usd": 0.20,
+            "speed_score": 30,
+            "cost_score": 90,
+            "max_amount": 100000,
+            "risk_level": "LOW",
+            "regulatory_overhead": "LOW",
+            "capacity_per_hour": 100000,
+            "availability": 0.999,
+            "supported_corridors": ["GB_GB"]
+        },
+        # EU Rails
+        "SEPA_CREDIT": {
+            "type": "DOMESTIC_BATCH",
+            "success_rate": 0.99,
+            "avg_cost_usd": 0.35,
+            "speed_score": 50,
+            "cost_score": 88,
+            "max_amount": 100000,
+            "risk_level": "LOW",
+            "regulatory_overhead": "MEDIUM",
+            "capacity_per_hour": 50000,
+            "availability": 0.999,
+            "supported_corridors": ["EU_EU", "GB_EU", "EU_UK"]
+        },
+        "SEPA_INSTANT": {
+            "type": "DOMESTIC_INSTANT",
+            "success_rate": 0.98,
+            "avg_cost_usd": 0.75,
+            "speed_score": 99,
+            "cost_score": 70,
+            "max_amount": 100000,
+            "risk_level": "LOW",
+            "regulatory_overhead": "MEDIUM",
+            "capacity_per_hour": 10000,
+            "availability": 0.998,
+            "supported_corridors": ["EU_EU"]
+        },
+        "TARGET2": {
+            "type": "CROSS_BORDER",
+            "success_rate": 0.999,
+            "avg_cost_usd": 5.00,
+            "speed_score": 95,
+            "cost_score": 60,
+            "max_amount": 50000000,
+            "risk_level": "VERY_LOW",
+            "regulatory_overhead": "HIGH",
+            "capacity_per_hour": 1000,
+            "availability": 0.9999,
+            "supported_corridors": ["EU_EU", "GB_EU"]
+        },
+        # Multi-region Rails
+        "Money_Transfer": {
+            "type": "CROSS_BORDER",
+            "success_rate": 0.95,
+            "avg_cost_usd": 8.00,
+            "speed_score": 70,
+            "cost_score": 75,
+            "max_amount": 500000,
+            "risk_level": "MEDIUM",
+            "regulatory_overhead": "MEDIUM",
+            "capacity_per_hour": 5000,
+            "availability": 0.98,
+            "supported_corridors": ["GB_WW"]
+        },
+        "Correspondent": {
+            "type": "CROSS_BORDER",
+            "success_rate": 0.92,
+            "avg_cost_usd": 30.00,
+            "speed_score": 55,
+            "cost_score": 10,
+            "max_amount": 2000000,
+            "risk_level": "HIGH",
+            "regulatory_overhead": "VERY_HIGH",
+            "capacity_per_hour": 200,
+            "availability": 0.85,
+            "supported_corridors": ["GB_WW", "EU_UK"]
         }
     }
     
@@ -214,6 +387,41 @@ class MockDataSources:
             "available_rails": ["SADC_PAY", "SWIFT_GPI", "REGIONAL_PARTNER"],
             "compliance_level": "REGIONAL",
             "regulatory_req": ["AML", "SADC_COMPLIANCE"]
+        },
+        "US_US": {
+            "available_rails": ["ACH", "RTP", "FedWire", "WIRE"],
+            "compliance_level": "STANDARD",
+            "regulatory_req": ["AML", "OFAC"]
+        },
+        "US_MX": {
+            "available_rails": ["SWIFT_GPI", "RIPPLE", "WIRE", "FedWire"],
+            "compliance_level": "HIGH",
+            "regulatory_req": ["AML", "SANCTIONS", "FX_REPORTING"]
+        },
+        "GB_GB": {
+            "available_rails": ["FPS", "CHAPS", "Bacs"],
+            "compliance_level": "STANDARD",
+            "regulatory_req": ["AML"]
+        },
+        "GB_EU": {
+            "available_rails": ["SWIFT_GPI", "SEPA_CREDIT", "TARGET2"],
+            "compliance_level": "HIGH",
+            "regulatory_req": ["AML", "BREXIT_COMPLIANCE"]
+        },
+        "GB_WW": {
+            "available_rails": ["SWIFT_GPI", "Money_Transfer", "Correspondent"],
+            "compliance_level": "HIGH",
+            "regulatory_req": ["AML", "SANCTIONS"]
+        },
+        "EU_EU": {
+            "available_rails": ["SEPA_CREDIT", "SEPA_INSTANT", "TARGET2", "SWIFT_GPI"],
+            "compliance_level": "STANDARD",
+            "regulatory_req": ["AML"]
+        },
+        "EU_UK": {
+            "available_rails": ["SWIFT_GPI", "SEPA_CREDIT", "Correspondent"],
+            "compliance_level": "HIGH",
+            "regulatory_req": ["AML", "BREXIT_COMPLIANCE"]
         }
     }
     
@@ -229,12 +437,30 @@ class MockDataSources:
     def calculate_fx_rate(from_curr: str, to_curr: str):
         # Mock FX rates
         rates = {
+            # ZAR pairs
             ("ZAR", "USD"): 0.053,
             ("USD", "ZAR"): 18.85,
             ("ZAR", "GBP"): 0.041,
             ("GBP", "ZAR"): 24.20,
             ("ZAR", "BWP"): 0.72,  # Botswana Pula
-            ("BWP", "ZAR"): 1.38
+            ("BWP", "ZAR"): 1.38,
+            # USD pairs
+            ("USD", "GBP"): 0.78,
+            ("GBP", "USD"): 1.28,
+            ("USD", "EUR"): 0.92,
+            ("EUR", "USD"): 1.09,
+            ("USD", "MXN"): 16.80,
+            ("MXN", "USD"): 0.0595,
+            # GBP pairs
+            ("GBP", "EUR"): 1.18,
+            ("EUR", "GBP"): 0.85,
+            # EUR pairs
+            ("EUR", "EUR"): 1.0,
+            # Same currency pairs
+            ("USD", "USD"): 1.0,
+            ("GBP", "GBP"): 1.0,
+            ("ZAR", "ZAR"): 1.0,
+            ("MXN", "MXN"): 1.0
         }
         return rates.get((from_curr, to_curr), 1.0)
 

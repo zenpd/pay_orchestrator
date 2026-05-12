@@ -14,51 +14,202 @@ import random
 API_BASE_URL = "http://localhost:8000"
 
 # ============================================================
-# PAYMENT TYPE DEFINITIONS (Enhanced with Multiple Rails)
+# REGION-SPECIFIC PAYMENT TYPE DEFINITIONS
 # ============================================================
 
-PAYMENT_TYPES = {
-    "Cross-Border Payment": {
-        "description": "International payments with MT→MX conversion",
-        "corridor": "ZA_US",
-        "rails": ["SWIFT_GPI", "NAMPAY", "PARTNER_NETWORK"],  # AI chooses based on speed/cost
-        "default_currency": ("ZAR", "USD"),
-        "example_amount": 50000.0,
-        "typical_use": "High-value, standard international transfers"
+REGIONS = {
+    "South Africa": {
+        "code": "SA",
+        "currency": "ZAR",
+        "payment_types": {
+            "Cross-Border Payment": {
+                "description": "International payments with MT→MX conversion",
+                "corridor": "ZA_US",
+                "rails": ["SWIFT_GPI", "NAMPAY", "PARTNER_NETWORK"],
+                "default_currency": ("ZAR", "USD"),
+                "example_amount": 50000.0,
+                "typical_use": "High-value, standard international transfers"
+            },
+            "Domestic Bulk Payment": {
+                "description": "High-volume batch payments (EOD processing)",
+                "corridor": "ZA_ZA",
+                "rails": ["RTGS_BULK", "BATCH_ACH", "SLOW_BATCH"],
+                "default_currency": ("ZAR", "ZAR"),
+                "example_amount": 500000.0,
+                "typical_use": "Payroll, supplier bulk payments"
+            },
+            "Domestic Non-Bulk (Instant)": {
+                "description": "Real-time small-value payments",
+                "corridor": "ZA_ZA",
+                "rails": ["PayShap_INSTANT", "RTGS_REALTIME", "CARD_RAIL"],
+                "default_currency": ("ZAR", "ZAR"),
+                "example_amount": 5000.0,
+                "typical_use": "P2P, small business urgent payments"
+            },
+            "Domestic Non-Bulk (Scheduled)": {
+                "description": "Scheduled domestic payments (4-hour batches)",
+                "corridor": "ZA_ZA",
+                "rails": ["PayShap_SCHEDULED", "STANDING_ORDER", "BATCH_ACH"],
+                "default_currency": ("ZAR", "ZAR"),
+                "example_amount": 15000.0,
+                "typical_use": "Recurring bills, scheduled transfers"
+            },
+            "SADC Regional Payment": {
+                "description": "SADC corridor payments with regional compliance",
+                "corridor": "ZA_BW",
+                "rails": ["SADC_PAY", "SWIFT_GPI", "REGIONAL_PARTNER"],
+                "default_currency": ("ZAR", "USD"),
+                "example_amount": 35000.0,
+                "typical_use": "Regional trade, cross-border business"
+            }
+        }
     },
-    "Domestic Bulk Payment": {
-        "description": "High-volume batch payments (EOD processing)",
-        "corridor": "ZA_ZA",
-        "rails": ["RTGS_BULK", "BATCH_ACH", "SLOW_BATCH"],  # AI chooses based on volume/time
-        "default_currency": ("ZAR", "ZAR"),
-        "example_amount": 500000.0,
-        "typical_use": "Payroll, supplier bulk payments"
+    "United States": {
+        "code": "US",
+        "currency": "USD",
+        "payment_types": {
+            "ACH Transfer": {
+                "description": "Standard domestic bank-to-bank transfer",
+                "corridor": "US_US",
+                "rails": ["ACH", "FedWire", "RTP"],
+                "default_currency": ("USD", "USD"),
+                "example_amount": 50000.0,
+                "typical_use": "B2B, payroll, vendor payments"
+            },
+            "Real-Time Payment": {
+                "description": "Instant fund transfer between banks",
+                "corridor": "US_US",
+                "rails": ["RTP", "FedWire", "WIRE"],
+                "default_currency": ("USD", "USD"),
+                "example_amount": 25000.0,
+                "typical_use": "Urgent payments, same-day settlements"
+            },
+            "Cross-Border to Mexico": {
+                "description": "International payment USD to MXN",
+                "corridor": "US_MX",
+                "rails": ["SWIFT_GPI", "RIPPLE", "WIRE"],
+                "default_currency": ("USD", "MXN"),
+                "example_amount": 40000.0,
+                "typical_use": "Trade, remittance to Mexico"
+            },
+            "Wire Transfer": {
+                "description": "High-value wire transfer",
+                "corridor": "US_US",
+                "rails": ["FedWire", "SWIFT_GPI", "RTP"],
+                "default_currency": ("USD", "USD"),
+                "example_amount": 100000.0,
+                "typical_use": "Large transactions, international"
+            },
+            "Bulk Payroll": {
+                "description": "Batch employee payments (EOD processing)",
+                "corridor": "US_US",
+                "rails": ["ACH", "BATCH_PROCESS", "FedWire"],
+                "default_currency": ("USD", "USD"),
+                "example_amount": 500000.0,
+                "typical_use": "Payroll, vendor bulk payments"
+            }
+        }
     },
-    "Domestic Non-Bulk (Instant)": {
-        "description": "Real-time small-value payments",
-        "corridor": "ZA_ZA",
-        "rails": ["PayShap_INSTANT", "RTGS_REALTIME", "CARD_RAIL"],  # AI chooses fastest
-        "default_currency": ("ZAR", "ZAR"),
-        "example_amount": 5000.0,
-        "typical_use": "P2P, small business urgent payments"
+    "United Kingdom": {
+        "code": "UK",
+        "currency": "GBP",
+        "payment_types": {
+            "Faster Payment": {
+                "description": "Same-day payment transfer",
+                "corridor": "GB_GB",
+                "rails": ["FPS", "CHAPS", "Bacs"],
+                "default_currency": ("GBP", "GBP"),
+                "example_amount": 25000.0,
+                "typical_use": "Time-sensitive domestic payments"
+            },
+            "CHAPS Transfer": {
+                "description": "High-value real-time transfer",
+                "corridor": "GB_GB",
+                "rails": ["CHAPS", "FPS", "SWIFT_GPI"],
+                "default_currency": ("GBP", "GBP"),
+                "example_amount": 75000.0,
+                "typical_use": "Large business payments, settlements"
+            },
+            "International to Europe": {
+                "description": "Cross-border payment to EU",
+                "corridor": "GB_EU",
+                "rails": ["SWIFT_GPI", "SEPA_CREDIT", "TARGET2"],
+                "default_currency": ("GBP", "EUR"),
+                "example_amount": 50000.0,
+                "typical_use": "EU trade, import/export"
+            },
+            "Bacs Payment": {
+                "description": "Bulk batch payment (3-day processing)",
+                "corridor": "GB_GB",
+                "rails": ["Bacs", "FPS", "CHAPS"],
+                "default_currency": ("GBP", "GBP"),
+                "example_amount": 300000.0,
+                "typical_use": "Payroll, supplier bulk payments"
+            },
+            "International Remittance": {
+                "description": "Overseas personal fund transfer",
+                "corridor": "GB_WW",
+                "rails": ["SWIFT_GPI", "Money_Transfer", "Correspondent"],
+                "default_currency": ("GBP", "USD"),
+                "example_amount": 10000.0,
+                "typical_use": "Family remittance, personal transfers"
+            }
+        }
     },
-    "Domestic Non-Bulk (Scheduled)": {
-        "description": "Scheduled domestic payments (4-hour batches)",
-        "corridor": "ZA_ZA",
-        "rails": ["PayShap_SCHEDULED", "STANDING_ORDER", "BATCH_ACH"],  # AI chooses based on schedule
-        "default_currency": ("ZAR", "ZAR"),
-        "example_amount": 15000.0,
-        "typical_use": "Recurring bills, scheduled transfers"
-    },
-    "SADC Regional Payment": {
-        "description": "SADC corridor payments with regional compliance",
-        "corridor": "ZA_BW",
-        "rails": ["SADC_PAY", "SWIFT_GPI", "REGIONAL_PARTNER"],  # AI chooses based on cost/risk
-        "default_currency": ("ZAR", "USD"),
-        "example_amount": 35000.0,
-        "typical_use": "Regional trade, cross-border business"
+    "Europe": {
+        "code": "EU",
+        "currency": "EUR",
+        "payment_types": {
+            "SEPA Credit Transfer": {
+                "description": "Pan-European payment scheme",
+                "corridor": "EU_EU",
+                "rails": ["SEPA_CREDIT", "TARGET2", "SWIFT_GPI"],
+                "default_currency": ("EUR", "EUR"),
+                "example_amount": 30000.0,
+                "typical_use": "Intra-Europe payments, B2B"
+            },
+            "Instant SEPA": {
+                "description": "Instant payment within SEPA zone",
+                "corridor": "EU_EU",
+                "rails": ["SEPA_INSTANT", "TARGET2", "SWIFT_GPI"],
+                "default_currency": ("EUR", "EUR"),
+                "example_amount": 20000.0,
+                "typical_use": "Urgent same-day transfers"
+            },
+            "TARGET2 Settlement": {
+                "description": "Large-value real-time settlement",
+                "corridor": "EU_EU",
+                "rails": ["TARGET2", "SWIFT_GPI", "SEPA_CREDIT"],
+                "default_currency": ("EUR", "EUR"),
+                "example_amount": 100000.0,
+                "typical_use": "Banking system, high-value settlements"
+            },
+            "Cross-Border to UK": {
+                "description": "Payment from EU to UK",
+                "corridor": "EU_UK",
+                "rails": ["SWIFT_GPI", "SEPA_CREDIT", "Correspondent"],
+                "default_currency": ("EUR", "GBP"),
+                "example_amount": 40000.0,
+                "typical_use": "UK trade, Brexit-era transfers"
+            },
+            "Bulk Salary Processing": {
+                "description": "Batch employee payment processing",
+                "corridor": "EU_EU",
+                "rails": ["SEPA_CREDIT", "BATCH_ACH", "TARGET2"],
+                "default_currency": ("EUR", "EUR"),
+                "example_amount": 400000.0,
+                "typical_use": "Payroll distribution, bulk vendor payments"
+            }
+        }
     }
 }
+
+# Get payment types for selected region
+def get_payment_types(region):
+    return REGIONS[region]["payment_types"]
+
+# Default to first region
+PAYMENT_TYPES = get_payment_types("South Africa")
 
 # ============================================================
 # STREAMLIT PAGE SETUP
@@ -93,6 +244,13 @@ st.markdown("""
     .rail-sadc { background-color: #9C27B0; color: white; }
     .rail-partner { background-color: #607D8B; color: white; }
     .rail-ach { background-color: #795548; color: white; }
+    .rail-fedwire { background-color: #1976D2; color: white; }
+    .rail-rtp { background-color: #00897B; color: white; }
+    .rail-fps { background-color: #E91E63; color: white; }
+    .rail-chaps { background-color: #D32F2F; color: white; }
+    .rail-bacs { background-color: #5E35B1; color: white; }
+    .rail-sepa { background-color: #0097A7; color: white; }
+    .rail-target { background-color: #388E3C; color: white; }
     .score-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -172,6 +330,20 @@ def get_rail_badge(rail_name):
         return f'<span class="rail-badge rail-sadc">{rail_name}</span>'
     elif "ACH" in rail_name:
         return f'<span class="rail-badge rail-ach">{rail_name}</span>'
+    elif "FedWire" in rail_name or "WIRE" in rail_name:
+        return f'<span class="rail-badge rail-fedwire">{rail_name}</span>'
+    elif "RTP" in rail_name:
+        return f'<span class="rail-badge rail-rtp">{rail_name}</span>'
+    elif "FPS" in rail_name:
+        return f'<span class="rail-badge rail-fps">{rail_name}</span>'
+    elif "CHAPS" in rail_name:
+        return f'<span class="rail-badge rail-chaps">{rail_name}</span>'
+    elif "Bacs" in rail_name:
+        return f'<span class="rail-badge rail-bacs">{rail_name}</span>'
+    elif "SEPA" in rail_name:
+        return f'<span class="rail-badge rail-sepa">{rail_name}</span>'
+    elif "TARGET" in rail_name or "TARGET2" in rail_name:
+        return f'<span class="rail-badge rail-target">{rail_name}</span>'
     else:
         return f'<span class="rail-badge rail-partner">{rail_name}</span>'
 
@@ -189,14 +361,27 @@ def main():
     with st.sidebar:
         st.header("🎯 Demo Controls")
         
+        # REGION SELECTOR - AT THE TOP
+        st.subheader("🌍 Select Region")
+        selected_region = st.selectbox(
+            "Choose your region:",
+            list(REGIONS.keys()),
+            help="Select region to see region-specific payment types and currencies"
+        )
+        
+        # Update payment types based on selected region
+        region_payment_types = get_payment_types(selected_region)
+        st.caption(f"Currency: {REGIONS[selected_region]['currency']}")
+        st.divider()
+        
         st.subheader("Select Payment Type")
         payment_type = st.selectbox(
             "Choose payment scenario:",
-            list(PAYMENT_TYPES.keys()),
+            list(region_payment_types.keys()),
             help="AI will evaluate multiple rails and select the optimal one"
         )
         
-        config = PAYMENT_TYPES[payment_type]
+        config = region_payment_types[payment_type]
         st.info(f"**{config['description']}**")
         st.caption(f"Typical use: {config['typical_use']}")
         
@@ -237,7 +422,7 @@ def main():
     tabs = st.tabs(["💰 Process Payment", "📜 Live Logs", "📊 Metrics", "🌍 Rails Catalog"])
     
     with tabs[0]:
-        show_payment_page(payment_type, routing_preference, urgency, risk_tolerance)
+        show_payment_page(payment_type, routing_preference, urgency, risk_tolerance, region_payment_types)
     
     with tabs[1]:
         show_logs_page()
@@ -248,10 +433,10 @@ def main():
     with tabs[3]:
         show_rails_catalog_page()
 
-def show_payment_page(payment_type, routing_preference, urgency, risk_tolerance):
+def show_payment_page(payment_type, routing_preference, urgency, risk_tolerance, region_payment_types):
     st.header(f"💰 {payment_type}")
     
-    config = PAYMENT_TYPES[payment_type]
+    config = region_payment_types[payment_type]
     
     with st.form("payment_form"):
         col1, col2 = st.columns(2)
@@ -416,7 +601,7 @@ def show_logs_page():
     
     col1, col2 = st.columns([3, 1])
     with col1:
-        auto_refresh = st.checkbox("Auto-refresh", value=True)
+        auto_refresh = st.checkbox("Auto-refresh", value=False)
     with col2:
         if st.button("🗑️ Clear Logs", use_container_width=True):
             if clear_logs():
@@ -429,10 +614,6 @@ def show_logs_page():
         log_container = st.container()
         with log_container:
             st.code("\n".join(logs_data['logs'][-50:]), language="log")
-        
-        if auto_refresh:
-            time.sleep(2)
-            st.rerun()
     else:
         st.info("No logs available. Process a payment to see live execution!")
 
