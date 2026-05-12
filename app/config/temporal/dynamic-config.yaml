@@ -1,0 +1,6 @@
+frontend.enableUpdateWorkflowExecution:
+  - value: true
+frontend.enableUpdateWorkflowExecutionAsyncAccepted:
+  - value: true
+limit.maxActivityScheduleToStartTimeout:
+  - value: 600

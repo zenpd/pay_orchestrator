@@ -1,6 +1,0 @@
-same folder:
-venv\Scripts\activate
-
-py api_server.py
-
-streamlit run streamlit_ui.py

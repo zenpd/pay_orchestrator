@@ -1,0 +1,81 @@
+# Payment validation rules
+# Each rule has: id, name, severity (ERROR|WARN), description
+
+global_limits:
+  max_amount_usd: 500000
+  high_corridor_max_usd: 250000
+  high_value_threshold_usd: 100000
+
+business_rules:
+  - id: BIZ-001
+    name: amount_positive
+    severity: ERROR
+    description: "Payment amount must be greater than zero."
+  - id: BIZ-002
+    name: amount_global_limit
+    severity: ERROR
+    description: "Payment amount must not exceed global limit of USD 500,000."
+  - id: BIZ-003
+    name: purpose_code_required
+    severity: ERROR
+    description: "Payment purpose code is mandatory for HIGH compliance corridors."
+  - id: BIZ-004
+    name: holiday_check
+    severity: WARN
+    description: "Payment submitted on a bank holiday may be delayed."
+  - id: BIZ-005
+    name: cutoff_check
+    severity: WARN
+    description: "Payment submitted after cut-off time will be processed next business day."
+  - id: BIZ-006
+    name: future_date_limit
+    severity: ERROR
+    description: "Value date cannot be more than 30 calendar days in the future."
+  - id: BIZ-007
+    name: duplicate_detection
+    severity: ERROR
+    description: "Duplicate payment detected within the last 24 hours."
+  - id: BIZ-008
+    name: balance_check
+    severity: ERROR
+    description: "Sender must have sufficient available balance including rail fees."
+  - id: BIZ-009
+    name: currency_pair_supported
+    severity: ERROR
+    description: "Currency pair must be supported for the selected corridor."
+
+rail_validations:
+  - id: RAIL-001
+    name: rail_available
+    severity: ERROR
+    description: "Selected rail must be active and available."
+  - id: RAIL-002
+    name: sanctions_screen
+    severity: ERROR
+    description: "Sender and receiver names must pass OFAC/UN/EU sanctions screening."
+  - id: RAIL-003
+    name: fraud_score_threshold
+    severity: ERROR
+    description: "ML fraud score must be below 0.75 to proceed."
+  - id: RAIL-004
+    name: rail_amount_limit
+    severity: ERROR
+    description: "Amount must not exceed the selected rail's maximum transaction limit."
+
+compliance_rules:
+  - id: COMP-001
+    name: aml_screening
+    severity: ERROR
+    description: "AML screening is mandatory for all cross-border payments."
+  - id: COMP-002
+    name: high_risk_country
+    severity: ERROR
+    description: "Payments to FATF grey/black-listed countries require enhanced due diligence."
+  - id: COMP-003
+    name: sarb_approval
+    severity: ERROR
+    description: "South African Reserve Bank approval required for outbound payments above ZAR 1,000,000."
+  - id: COMP-004
+    name: fica_compliance
+    severity: ERROR
+    description: "FICA compliance must be confirmed for all South African originating payments."

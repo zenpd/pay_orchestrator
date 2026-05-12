@@ -1,0 +1,46 @@
+Summary
+The PoC scope is to build a middle-office orchestration and validation layer that preprocesses payments, dynamically routes transactions across rails (SWIFT, PayShap, RTGS), and converts messages to MX. It addresses legacy architecture load, modernization, customer experience abstraction, and AI-driven optimization. Pre-validation rules are shifted left to reduce back-office strain, while AI ensures intelligent routing, fraud detection, and future-proofing.
+
+Scope of PoC
+1. Rails Covered
+Cross-border: SWIFT (MT → MX conversion), SADC rails, partner-driven rails (e.g., Remitly, CIPS).
+
+Domestic: PayShap (instant/scheduled, non-bulk) and RTGS (high-value, bulk).
+
+Future-proofing: EFT deprecation (2026–2027) → AI model trained now for seamless transition.
+
+2. Use Cases Proposed
+Payment Preprocessing (Order Management)
+
+Left-shift validations currently done in back-office.
+
+Reduce load on legacy systems and insulate them from channel modernization.
+
+Intelligent Payment Routing
+
+Dynamic rail selection based on customer choice (“fastest vs cheapest”).
+
+AI-driven routing logic considering liquidity, compliance, risk, and cost optimization.
+
+Dynamic Message Conversion
+
+MT to MX (ISO20022) and custom format conversion.
+
+Supports international and domestic rails moving to MX.
+
+Pre-Validation Rules (Left-Shifting)
+Business Rule Validations
+Amount check
+Holiday check
+Cut-off check
+Future date validation
+Duplicate check
+Charges & fees update
+Limit check
+Balance check
+Category/purpose code check
+Payment Rail Validations
+Duplicate check
+Sanctions check
+Fraud check
+Charges & fees integration

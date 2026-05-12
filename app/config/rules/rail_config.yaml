@@ -1,0 +1,56 @@
+# Rail configuration — scoring parameters and message format mappings
+
+scoring_weights:
+  balanced:
+    speed: 0.50
+    cost: 0.50
+  fastest:
+    speed: 0.80
+    cost: 0.20
+  cheapest:
+    speed: 0.20
+    cost: 0.80
+
+normalisation_ranges:
+  cost_usd:
+    min: 0.15
+    max: 35.00
+  processing_hours:
+    min: 0.017
+    max: 48.0
+
+risk_penalties:
+  VERY_LOW: 0.00
+  LOW: 0.05
+  MEDIUM: 0.15
+  HIGH: 0.30
+
+regulatory_penalties:
+  LOW: 0.00
+  MEDIUM: 0.05
+  HIGH: 0.10
+
+message_format_mapping:
+  SWIFT_GPI: SWIFT_MT103
+  SWIFT_TRADITIONAL: SWIFT_MT103
+  PayShap_INSTANT: ISO20022_pacs.008
+  PayShap_SCHEDULED: ISO20022_pacs.008
+  RTGS_HIGH_VALUE: RTGS_XML
+  RTGS_BULK: BANKSERV_ACB
+  SADC_PAY: ISO20022_pacs.008
+  CORRESPONDENT: CORRESPONDENT_PROPRIETARY
+
+# MT→MX conversion tracking
+mt_mx_conversion:
+  SWIFT_GPI:
+    original: MT103
+    converted: MX_pacs.008
+  SWIFT_TRADITIONAL:
+    original: MT103
+    converted: MX_pacs.008
+  PayShap_INSTANT:
+    original: native_MX
+    converted: native_MX
+  RTGS_HIGH_VALUE:
+    original: RTGS_XML
+    converted: RTGS_XML
