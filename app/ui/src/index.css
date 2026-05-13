@@ -1,15 +1,272 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  :root {
+    --sidebar-w: 240px;
+    --header-h: 64px;
+    --footer-h: 44px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+
+  h1 { @apply text-3xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl; }
 }
 
-body {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  background-color: #f3f4f6;
+@layer components {
+  /* ── Buttons ──────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg
+           font-medium transition-all duration-150 cursor-pointer
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply btn bg-indigo-600 text-white hover:bg-indigo-700
+           focus:ring-indigo-500 shadow-sm hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply btn bg-gray-100 text-gray-900 hover:bg-gray-200
+           focus:ring-gray-500;
+  }
+
+  .btn-outline {
+    @apply btn border border-gray-300 text-gray-700 hover:bg-gray-50
+           focus:ring-gray-500;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  /* ── Input fields ────────────────────────────────────────────────────── */
+  .input {
+    @apply w-full px-4 py-2 rounded-lg border border-gray-300
+           bg-white text-gray-900 placeholder-gray-500
+           transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+  }
+
+  .input:disabled {
+    @apply bg-gray-50 text-gray-400 cursor-not-allowed;
+  }
+
+  /* ── Cards ─────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-lg border border-gray-100 shadow-sm;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-100;
+  }
+
+  .card-body {
+    @apply px-6 py-4;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-100 bg-gray-50/50;
+  }
+
+  /* ── Badges ───────────────────────────────────────────────────────– */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700;
+  }
+
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700;
+  }
+
+  .badge-error {
+    @apply bg-red-50 text-red-700;
+  }
+
+  .badge-info {
+    @apply bg-blue-50 text-blue-700;
+  }
+
+  /* ── Page sections ───────────────────────────────────────────────── */
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold text-gray-900;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-gray-500 mt-1;
+  }
+
+  .section-title {
+    @apply text-xs font-semibold text-gray-400 uppercase tracking-wider;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────────────– */
+  .divider {
+    @apply border-t border-gray-100 my-4;
+  }
+
+  /* ── Glass effect ─────────────────────────────────────────────────– */
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl;
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* ── Gradient text ────────────────────────────────────────────────– */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #4f46e5, #6366f1);
+  }
+
+  /* ── Sidebar ──────────────────────────────────────────────────────– */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+           text-gray-600 hover:bg-indigo-50 hover:text-indigo-700
+           transition-all duration-150 relative;
+  }
+
+  .sidebar-link.active {
+    @apply bg-indigo-50 text-indigo-700 font-semibold;
+  }
+
+  .sidebar-link.active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-indigo-600;
+  }
+
+  .sidebar-link svg {
+    @apply flex-shrink-0 opacity-70 transition-transform duration-150;
+  }
+
+  .sidebar-link:hover svg {
+    @apply scale-110;
+  }
+
+  .sidebar-link.active svg {
+    @apply opacity-100;
+  }
+
+  /* ── Shadows ──────────────────────────────────────────────────────– */
+  .shadow-header {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-sidebar {
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 12px rgba(79, 70, 229, 0.2);
+  }
+
+  /* ── Animations ───────────────────────────────────────────────────– */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  .animate-pulse-dot {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+}
+
+/* ── Status dots ──────────────────────────────────────────────────────── */
+.status-online {
+  @apply inline-flex items-center gap-1.5;
+}
+
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot.online {
+  @apply bg-emerald-500;
+}
+
+.status-dot.offline {
+  @apply bg-gray-400;
+}
+
+.status-dot.loading {
+  @apply bg-amber-500 animate-pulse;
+}
+
+/* ── Agent flow visualization ──────────────────────────────────────── */
+.agent-node {
+  @apply relative flex items-center justify-center;
+}
+
+.agent-node-active {
+  @apply ring-2 ring-indigo-400 ring-offset-2 animate-pulse;
+}
+
+.agent-flow-line {
+  @apply absolute border-t-2 border-indigo-200;
+}
+
+.agent-flow-line.active {
+  @apply border-t-2 border-indigo-500 animate-pulse;
+}
+
+/* ── Payment rail styles ───────────────────────────────────────────– */
+.rail-card {
+  @apply card p-4 cursor-pointer transition-all duration-200
+         hover:shadow-md hover:border-indigo-200;
+}
+
+.rail-card.selected {
+  @apply ring-2 ring-indigo-500 ring-offset-2 shadow-md;
+}
+
+.rail-score {
+  @apply text-2xl font-bold;
+}
+
+.rail-score.high {
+  @apply text-emerald-600;
+}
+
+.rail-score.medium {
+  @apply text-amber-600;
+}
+
+.rail-score.low {
+  @apply text-red-600;
 }

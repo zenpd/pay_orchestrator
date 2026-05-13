@@ -17,11 +17,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ---------- Copy SSL certificate for Azure ----------
-COPY ./DigiCertGlobalRootG2.crt ./
-
 # ---------- Copy application code ----------
-COPY app_refactored ./
+COPY api ./api
+COPY config ./config
+COPY shared ./shared
+COPY agents ./agents
+COPY workflows ./workflows
+COPY db ./db
+COPY observability ./observability
 
 # ---------- Non-root user -----------------------------------------------
 RUN addgroup --system appgroup \

@@ -1,0 +1,48 @@
+# ── Web framework ─────────────────────────────────────────────────────────────
+fastapi
+uvicorn[standard]
+python-multipart
+websockets
+
+# ── LangGraph / LangChain ─────────────────────────────────────────────────────
+langgraph
+langchain
+langchain-openai
+langchain-community
+
+# ── Temporal workflow (optional) ───────────────────────────────────────────────
+temporalio
+
+# ── Vector DBs ────────────────────────────────────────────────────────────────
+qdrant-client
+
+# ── AI / ML ───────────────────────────────────────────────────────────────────
+openai
+tiktoken
+
+# ── Database / Cache ──────────────────────────────────────────────────────────
+sqlalchemy[asyncio]
+asyncpg
+redis
+pydantic-settings
+python-dotenv
+
+# ── Observability ────────────────────────────────────────────────────────────
+arize-phoenix
+python-json-logger
+opentelemetry-api
+opentelemetry-sdk
+
+# ── Azure ──────────────────────────────────────────────────────────────────────
+azure-identity
+azure-keyvault-secrets
+azure-storage-blob
+
+# ── Testing & Evaluation ─────────────────────────────────────────────────────
+pytest
+pytest-asyncio
+
+# ── Development ──────────────────────────────────────────────────────────────
+black
+ruff
+mypy
