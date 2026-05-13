@@ -1,0 +1,70 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - app_refactored/ui/**
+      - azure-pipelines-fe.yml
+    exclude:
+      - app_refactored/api/**
+      - README.md
+
+variables:
+  acrName: 'zafacr-gqfyc3h8eya2djey.azurecontainerapps.io'
+  resourceGroup: 'Zenlabs-Agent-Foundry'
+  frontendAppName: 'payment-orchestrator-fe'
+  frontendRepo: 'payment-orchestrator-fe'
+  tag: 'latest'
+
+stages:
+- stage: Build
+  displayName: Build & Push Frontend Image
+  jobs:
+    - job: BuildFrontend
+      displayName: Build Frontend Docker Image
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - checkout: self
+        - task: Docker@2
+          displayName: Build and Push Frontend Image
+          inputs:
+            command: buildAndPush
+            repository: $(frontendRepo)
+            dockerfile: $(Build.SourcesDirectory)/app_refactored/ui/Dockerfile
+            containerRegistry: 'zafacr'
+            tags: |
+              $(tag)
+              $(Build.BuildId)
+            arguments: |
+              --build-arg BUILDKIT_INLINE_CACHE=1
+
+- stage: Deploy
+  displayName: Deploy to Azure Container Apps
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+    - deployment: DeployFrontend
+      displayName: Deploy Frontend to ACA
+      pool:
+        vmImage: 'ubuntu-latest'
+      environment: production
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - task: AzureCLI@2
+                displayName: Deploy to Container Apps
+                inputs:
+                  azureSubscription: 'Zenlabs-agent-foundry-connection'
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: |
+                    az containerapp update \
+                      --name $(frontendAppName) \
+                      --resource-group $(resourceGroup) \
+                      --image $(acrName)/$(frontendRepo):$(tag) \
+                      --set-env-vars \
+                        VITE_API_URL="https://payment-orchestrator-be.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io/api"

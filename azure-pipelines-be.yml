@@ -1,0 +1,83 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - app_refactored/api/**
+      - app_refactored/config/**
+      - app_refactored/shared/**
+      - app_refactored/agents/**
+      - app_refactored/workflows/**
+      - app_refactored/db/**
+      - app_refactored/observability/**
+      - app_refactored/workers/**
+      - Dockerfile.refactored
+      - requirements_refactored.txt
+    exclude:
+      - app_refactored/ui/**
+      - README.md
+
+variables:
+  acrName: 'zafacr-gqfyc3h8eya2djey.azurecontainerapps.io'
+  resourceGroup: 'Zenlabs-Agent-Foundry'
+  backendAppName: 'payment-orchestrator-be'
+  backendRepo: 'payment-orchestrator-be'
+  tag: 'latest'
+
+stages:
+- stage: Build
+  displayName: Build & Push Backend Image
+  jobs:
+    - job: BuildBackend
+      displayName: Build Backend Docker Image
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - checkout: self
+        - task: Docker@2
+          displayName: Build and Push Backend Image
+          inputs:
+            command: buildAndPush
+            repository: $(backendRepo)
+            dockerfile: $(Build.SourcesDirectory)/Dockerfile.refactored
+            containerRegistry: 'zafacr'
+            tags: |
+              $(tag)
+              $(Build.BuildId)
+            arguments: |
+              --build-arg BUILDKIT_INLINE_CACHE=1
+
+- stage: Deploy
+  displayName: Deploy to Azure Container Apps
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+    - deployment: DeployBackend
+      displayName: Deploy Backend to ACA
+      pool:
+        vmImage: 'ubuntu-latest'
+      environment: production
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - task: AzureCLI@2
+                displayName: Deploy to Container Apps
+                inputs:
+                  azureSubscription: 'Zenlabs-agent-foundry-connection'
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: |
+                    az containerapp update \
+                      --name $(backendAppName) \
+                      --resource-group $(resourceGroup) \
+                      --image $(acrName)/$(backendRepo):$(tag) \
+                      --set-env-vars \
+                        APP_ENV=production \
+                        DATABASE_URL="@keyvault(Zenlabs-Agent-Foundry-payment-db-url)" \
+                        REDIS_URL="@keyvault(Zenlabs-Agent-Foundry-payment-redis-url)" \
+                        AZURE_OPENAI_ENDPOINT="@keyvault(Zenlabs-Agent-Foundry-openai-endpoint)" \
+                        AZURE_OPENAI_API_KEY="@keyvault(Zenlabs-Agent-Foundry-openai-key)" \
+                        CORS_ALLOWED_ORIGINS="https://payment-orchestrator-fe.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io"
