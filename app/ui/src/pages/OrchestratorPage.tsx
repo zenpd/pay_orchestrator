@@ -64,11 +64,11 @@ const MOCK_RAILS: RailScore[] = [
   },
 ]
 
-const WORKFLOW_STEPS = [
-  { id: 'analyze', name: 'analyze_payment', label: 'Analyze Payment Parameters', status: 'complete' as const, icon: null },
-  { id: 'score', name: 'score_rails', label: 'Evaluate Payment Rails', status: 'complete' as const, icon: null },
-  { id: 'select', name: 'select_rail', label: 'Select Optimal Route', status: 'complete' as const, icon: null },
-  { id: 'execute', name: 'execute_payment', label: 'Execute Payment', status: 'complete' as const, icon: null },
+const WORKFLOW_STEPS: Array<{ id: string; name: string; label: string; status: 'pending' | 'active' | 'complete'; icon: null }> = [
+  { id: 'analyze', name: 'analyze_payment', label: 'Analyze Payment Parameters', status: 'pending', icon: null },
+  { id: 'score', name: 'score_rails', label: 'Evaluate Payment Rails', status: 'pending', icon: null },
+  { id: 'select', name: 'select_rail', label: 'Select Optimal Route', status: 'pending', icon: null },
+  { id: 'execute', name: 'execute_payment', label: 'Execute Payment', status: 'pending', icon: null },
 ]
 
 export const OrchestratorPage: React.FC = () => {
@@ -115,7 +115,9 @@ export const OrchestratorPage: React.FC = () => {
       }, 800)
     }, 600)
 
-    setTimeout(() => await orchestrate(formData), 3000)
+    setTimeout(async () => {
+      await orchestrate(formData)
+    }, 3000)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -261,23 +263,25 @@ export const OrchestratorPage: React.FC = () => {
                 currency={formData.currency}
                 selectedRail={result.selected_rail || 'SWIFT_GPI'}
                 estimatedTime="2-4 hours"
-                estimatedCost={(result.rail_scores?.[0]?.estimated_cost || 15.5)}
-                compositeScore={result.rail_scores?.[0]?.composite_score || 92}
+                estimatedCost={15.5}
+                compositeScore={92}
               />
 
               {/* Rail Scores */}
               {result.rail_scores && (
                 <RailScoresTable
-                  rails={result.rail_scores.map(r => ({
-                    name: r.rail,
-                    compositeScore: r.composite_score,
-                    costScore: r.cost_score,
-                    speedScore: r.speed_score,
-                    reliabilityScore: r.reliability_score,
-                    estimatedTime: r.estimated_time || '2-4 hours',
-                    estimatedCost: r.estimated_cost || 15.5,
-                    isOptimal: r.rail === result.selected_rail,
-                  }))}
+                  rails={Object.entries(result.rail_scores).map(([key, r]) => {
+                    return {
+                      name: key,
+                      compositeScore: r.composite_score,
+                      costScore: r.cost_score,
+                      speedScore: r.speed_score,
+                      reliabilityScore: r.reliability_score,
+                      estimatedTime: r.estimated_time_hours ? `${r.estimated_time_hours} hours` : '2-4 hours',
+                      estimatedCost: r.estimated_cost_usd,
+                      isOptimal: key === result.selected_rail,
+                    }
+                  })}
                   selectedRail={result.selected_rail}
                 />
               )}
