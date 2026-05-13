@@ -18,13 +18,16 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ---------- Copy application code ----------
-COPY api ./api
-COPY config ./config
-COPY shared ./shared
-COPY agents ./agents
-COPY workflows ./workflows
-COPY db ./db
-COPY observability ./observability
+COPY app/api ./api
+COPY app/config ./config
+COPY app/shared ./shared
+COPY app/agents ./agents
+COPY app/workflows ./workflows
+COPY app/db ./db
+COPY app/observability ./observability
+COPY app/workers ./workers
+COPY app/services ./services
+COPY app/evaluations ./evaluations
 
 # ---------- Non-root user -----------------------------------------------
 RUN addgroup --system appgroup \
