@@ -13,6 +13,7 @@ class PaymentRequestSchema(BaseModel):
     sender_id: str = Field(..., description="Sender account/entity identifier")
     receiver_id: str = Field(..., description="Receiver account/entity identifier")
     corridor: str = Field(..., description="Payment corridor, e.g., ZA_US, ZA_GB")
+    region: str = Field(default="US", description="Region: US, UK, SA, EUR")
     deadline_minutes: Optional[int] = Field(None, description="Desired completion time")
     metadata: Dict[str, Any] = Field(default_factory=dict)
 

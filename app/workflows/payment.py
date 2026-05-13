@@ -7,7 +7,12 @@ import uuid
 from datetime import datetime
 
 from agents.state import PaymentState, PaymentRequest, RailType, RailScore
-from agents.tools.rail_tools import check_rail_eligibility, estimate_cost, estimate_processing_time
+from services.regional_data import (
+    get_rails_for_region,
+    get_corridors_for_region,
+    score_rail_for_request,
+    Region
+)
 from shared.logger import get_logger
 
 log = get_logger("workflows.payment")
@@ -41,41 +46,69 @@ def node_analyze_payment(state: PaymentState) -> PaymentState:
 
 
 def node_score_rails(state: PaymentState) -> PaymentState:
-    """Evaluate and score all available payment rails."""
+    """Evaluate and score all available payment rails for the region."""
     log.info(f"score_rails: session={state.session_id}")
     
     req = state.payment_request
-    rails = [RailType.SWIFT_GPI, RailType.NAMPAY, RailType.PARTNER_NETWORK,
-             RailType.RTGS_BULK, RailType.BATCH_ACH, RailType.SLOW_BATCH]
+    region = state.region or "US"  # Default to US if not specified
     
-    for rail in rails:
-        # Check eligibility
-        eligible_result = check_rail_eligibility(rail.value, req.amount, req.corridor)
-        if not eligible_result.get("eligible"):
-            state.messages.append(f"Rail {rail.value}: ineligible - {eligible_result.get('reason')}")
-            continue
+    try:
+        # Get regional rails
+        regional_rails = get_rails_for_region(region)
+        corridors = get_corridors_for_region(region)
         
-        # Calculate scores
-        est_cost = estimate_cost(rail.value, req.amount)
-        cost_score = max(0, 100 - (est_cost * 10))  # Mock cost scoring
-        speed_score = [r for r in [RailType.SWIFT_GPI, RailType.NAMPAY, RailType.RTGS_BULK] 
-                       if r == rail][0:1]
-        speed_val = 85 if speed_score else 50  # Domestic slower
+        # Check if corridor is valid
+        if req.corridor not in corridors:
+            state.errors.append(f"Corridor '{req.corridor}' not available in {region}")
+            state.messages.append(f"Available corridors: {', '.join(corridors.keys())}")
+            state.stage = "failed"
+            return state
         
-        composite = (cost_score * 0.3 + speed_val * 0.4 + 80 * 0.3)  # Weighted scoring
-        
-        score = RailScore(
-            rail_type=rail,
-            composite_score=composite,
-            cost_score=cost_score,
-            speed_score=speed_val,
-            reliability_score=90,
-            estimated_cost_usd=est_cost,
-            estimated_time_hours=4.0 if speed_val < 50 else 1.0,
-            feasibility="FEASIBLE"
-        )
-        state.rail_scores[rail] = score
-        state.messages.append(f"Rail {rail.value}: score={composite:.1f}")
+        # Score each rail
+        for rail_name, rail_data in regional_rails.items():
+            # Calculate score based on amount and corridor
+            composite_score = score_rail_for_request(rail_data, req.amount, req.corridor)
+            
+            if composite_score == 0:
+                reason = "Ineligible for this transaction"
+                if req.amount > rail_data["max_amount"]:
+                    reason = f"Amount exceeds limit (max: ${rail_data['max_amount']:,.0f})"
+                elif req.amount < rail_data["min_amount"]:
+                    reason = f"Amount below minimum (min: ${rail_data['min_amount']:,.0f})"
+                state.messages.append(f"Rail {rail_name}: {reason}")
+                continue
+            
+            score = RailScore(
+                rail_type=RailType.SWIFT_GPI,  # Placeholder - we'll map properly
+                composite_score=composite_score,
+                cost_score=rail_data["cost_score"],
+                speed_score=rail_data["speed_score"],
+                reliability_score=rail_data["reliability_score"],
+                estimated_cost_usd=rail_data["estimated_cost_usd"],
+                estimated_time_hours=rail_data["estimated_time_hours"],
+                feasibility="FEASIBLE" if rail_data["success_rate"] > 0.9 else "RISKY"
+            )
+            
+            # Store with rail name as key (we'll handle this differently in frontend)
+            rail_type_key = RailType.SWIFT_GPI  # Simplified for now
+            state.rail_scores[rail_type_key] = score
+            state.messages.append(f"Rail {rail_name}: score={composite_score:.1f}, cost=${rail_data['estimated_cost_usd']:.2f}")
+            
+            # Store metadata about the rail
+            if not hasattr(state, '_rail_metadata'):
+                state._rail_metadata = {}
+            state._rail_metadata[rail_name] = rail_data
+    
+    except Exception as e:
+        state.errors.append(f"Error scoring rails: {str(e)}")
+        log.error(f"Error in node_score_rails: {str(e)}")
+        state.stage = "failed"
+        return state
+    
+    if not state.rail_scores:
+        state.errors.append("No eligible rails found for this payment")
+        state.stage = "failed"
+        return state
     
     state.stage = "deciding"
     return state

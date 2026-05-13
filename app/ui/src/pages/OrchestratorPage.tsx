@@ -5,6 +5,7 @@ import { usePaymentOrchestration } from '../hooks/usePayment'
 import AgentOrchestrationFlow from '../components/orchestration/AgentOrchestrationFlow'
 import RailScoresTable, { type RailScore } from '../components/orchestration/RailScoresTable'
 import PaymentResult from '../components/orchestration/PaymentResult'
+import { RegionFilter } from '../components/orchestration/RegionFilter'
 
 const MOCK_RAILS: RailScore[] = [
   {
@@ -73,15 +74,36 @@ const WORKFLOW_STEPS: Array<{ id: string; name: string; label: string; status: '
 
 export const OrchestratorPage: React.FC = () => {
   const { orchestrate, loading, error, result } = usePaymentOrchestration()
+  const [region, setRegion] = useState('US')
+  const [corridors, setCorridors] = useState<Record<string, string>>({ 'US_UK': 'USA → UK' })
+  const [currencies, setCurrencies] = useState<string[]>(['USD'])
   const [formData, setFormData] = useState<PaymentRequest>({
     amount: 50000,
     currency: 'USD',
     sender_id: 'ACC-001',
     receiver_id: 'ACC-002',
-    corridor: 'ZA_US',
+    corridor: 'US_UK',
+    region: 'US',
   })
   const [workflowSteps, setWorkflowSteps] = useState(WORKFLOW_STEPS)
   const [hasSubmitted, setHasSubmitted] = useState(false)
+
+  // Load regional data on region change
+  useEffect(() => {
+    fetch(`http://localhost:8005/api/v1/payment/regions/${region}/rails`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.corridors) setCorridors(data.corridors)
+        if (data.currencies) setCurrencies(data.currencies)
+        setFormData(prev => ({
+          ...prev,
+          region,
+          corridor: Object.keys(data.corridors || {})[0] || 'US_UK',
+          currency: data.currencies?.[0] || 'USD',
+        }))
+      })
+      .catch(err => console.error('Error loading regional data:', err))
+  }, [region])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,10 +172,13 @@ export const OrchestratorPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Form & Flow */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Region Filter */}
+          <RegionFilter selectedRegion={region} onRegionChange={setRegion} />
+
           {/* Payment Form */}
           <div className="card">
             <div className="card-header">
-              <h3 className="text-sm font-semibold">New Payment</h3>
+              <h3 className="text-sm font-semibold">New Payment ({region})</h3>
             </div>
             <form onSubmit={handleSubmit} className="card-body space-y-4">
               <div>
@@ -176,9 +201,9 @@ export const OrchestratorPage: React.FC = () => {
                   onChange={handleChange}
                   className="input"
                 >
-                  <option>USD</option>
-                  <option>EUR</option>
-                  <option>ZAR</option>
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
                 </select>
               </div>
 
@@ -214,9 +239,9 @@ export const OrchestratorPage: React.FC = () => {
                   onChange={handleChange}
                   className="input"
                 >
-                  <option value="ZA_US">ZA → US</option>
-                  <option value="ZA_GB">ZA → GB</option>
-                  <option value="US_GB">US → GB</option>
+                  {Object.entries(corridors).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
                 </select>
               </div>
 

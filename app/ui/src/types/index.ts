@@ -4,6 +4,7 @@ export interface PaymentRequest {
   sender_id: string
   receiver_id: string
   corridor: string
+  region?: string
   deadline_minutes?: number
   metadata?: Record<string, any>
 }

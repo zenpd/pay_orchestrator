@@ -25,6 +25,7 @@ class PaymentRequest:
     sender_id: str
     receiver_id: str
     corridor: str  # e.g., "ZA_US"
+    region: str = "US"  # US, UK, SA, EUR
     deadline_minutes: Optional[int] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -50,6 +51,7 @@ class PaymentState:
 
     # Processing stages
     stage: str  # "analyzing", "scoring", "deciding", "executing", "completed"
+    region: str = "US"  # US, UK, SA, EUR for regional support
     rail_scores: Dict[RailType, RailScore] = field(default_factory=dict)
     selected_rail: Optional[RailType] = None
     execution_result: Optional[Dict[str, Any]] = None

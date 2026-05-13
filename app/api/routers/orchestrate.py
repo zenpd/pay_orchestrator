@@ -8,6 +8,11 @@ from fastapi import APIRouter, HTTPException
 from agents.state import PaymentState, PaymentRequest
 from api.schemas import PaymentRequestSchema, PaymentResponseSchema, RailScoreSchema
 from workflows.payment import payment_orchestration_graph
+from services.regional_data import (
+    get_rails_for_region,
+    get_corridors_for_region,
+    get_currencies_for_region,
+)
 from shared.logger import get_logger
 
 log = get_logger("api.routers.orchestrate")
@@ -38,6 +43,7 @@ async def orchestrate_payment(request: PaymentRequestSchema) -> PaymentResponseS
             sender_id=request.sender_id,
             receiver_id=request.receiver_id,
             corridor=request.corridor,
+            region=request.region,  # Add region
             deadline_minutes=request.deadline_minutes,
             metadata=request.metadata,
         )
@@ -45,6 +51,7 @@ async def orchestrate_payment(request: PaymentRequestSchema) -> PaymentResponseS
         state = PaymentState(
             session_id=session_id,
             payment_request=payment_request,
+            region=request.region,  # Add region to state
             stage="initializing",
             created_at=datetime.utcnow().isoformat(),
         )
@@ -72,6 +79,63 @@ async def orchestrate_payment(request: PaymentRequestSchema) -> PaymentResponseS
     except Exception as e:
         log.error(f"orchestrate_payment failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Payment orchestration failed: {str(e)}")
+
+
+@router.get("/regions")
+async def get_regions() -> dict:
+    """Get available regions."""
+    return {
+        "regions": ["US", "UK", "SA", "EUR"],
+        "descriptions": {
+            "US": "United States",
+            "UK": "United Kingdom",
+            "SA": "South Africa",
+            "EUR": "Europe",
+        }
+    }
+
+
+@router.get("/regions/{region}/rails")
+async def get_regional_rails(region: str) -> dict:
+    """Get payment rails for a specific region with realistic data."""
+    from services.regional_data import get_rails_for_region, get_corridors_for_region, get_currencies_for_region
+    
+    try:
+        rails_dict = get_rails_for_region(region)
+        corridors = get_corridors_for_region(region)
+        currencies = get_currencies_for_region(region)
+        
+        # Format rails for frontend
+        formatted_rails = {}
+        for rail_name, rail_data in rails_dict.items():
+            formatted_rails[rail_name] = {
+                "name": rail_data["name"],
+                "type": rail_data["type"],
+                "speed_score": rail_data["speed_score"],
+                "cost_score": rail_data["cost_score"],
+                "reliability_score": rail_data["reliability_score"],
+                "estimated_cost_usd": rail_data["estimated_cost_usd"],
+                "estimated_time_hours": rail_data["estimated_time_hours"],
+                "max_amount": rail_data["max_amount"],
+                "min_amount": rail_data["min_amount"],
+                "success_rate": rail_data["success_rate"],
+            }
+        
+        return {
+            "region": region,
+            "rails": formatted_rails,
+            "corridors": corridors,
+            "currencies": currencies
+        }
+    except Exception as e:
+        log.error(f"Error getting regional rails: {str(e)}")
+        return {
+            "error": str(e),
+            "region": region,
+            "rails": {},
+            "corridors": {},
+            "currencies": []
+        }
 
 
 @router.get("/rails")
