@@ -1,12 +1,13 @@
-from redis.asyncio import Redis
-from shared.config import get_settings
+"""Dependency injection and shared dependencies."""
+from __future__ import annotations
 
-settings = get_settings()
-_redis: Redis | None = None
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models import get_session
 
 
-async def get_redis() -> Redis:
-    global _redis
-    if _redis is None:
-        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    return _redis
+async def get_db_session() -> AsyncSession:
+    """Get database session for route handlers."""
+    async for session in get_session():
+        yield session

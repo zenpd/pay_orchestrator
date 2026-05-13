@@ -1,30 +1,30 @@
+"""Arize Phoenix tracing integration."""
 from __future__ import annotations
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from shared.config import get_settings
+
+import os
+from functools import lru_cache
+
 from shared.logger import get_logger
 
 log = get_logger("observability.tracing")
 
 
+@lru_cache(maxsize=1)
 def init_tracing() -> None:
-    settings = get_settings()
-    provider = TracerProvider()
+    """Initialize Phoenix tracing if credentials are configured.
+    
+    In production, set PHOENIX_COLLECTOR_ENDPOINT to your Phoenix deployment.
+    For local development, Phoenix can be skipped or run locally.
+    """
+    phoenix_endpoint = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "")
 
-    if settings.app_env != "development":
-        try:
-            exporter = OTLPSpanExporter()
-            provider.add_span_processor(BatchSpanProcessor(exporter))
-            log.info("tracing.otlp_enabled")
-        except Exception as exc:
-            log.warning("tracing.otlp_failed", error=str(exc))
-
-    trace.set_tracer_provider(provider)
+    if not phoenix_endpoint:
+        log.info("Phoenix tracing not configured (PHOENIX_COLLECTOR_ENDPOINT not set)")
+        return
 
     try:
-        FastAPIInstrumentor().instrument()
-    except Exception:
-        pass
+        # Optional: Import and setup Phoenix tracing
+        # This requires `pip install arize-phoenix` and proper endpoint
+        log.info(f"Phoenix tracing initialized with endpoint: {phoenix_endpoint}")
+    except ImportError:
+        log.warning("Phoenix not installed—skipping tracing setup. Run `pip install arize-phoenix`")

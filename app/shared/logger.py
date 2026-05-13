@@ -1,34 +1,34 @@
+"""Structured logging setup — compatible with Phoenix observability."""
 from __future__ import annotations
+
 import logging
 import sys
-import structlog
-from shared.config import get_settings
+from functools import lru_cache
+
+from pythonjsonlogger import jsonlogger
 
 
-def setup_logging() -> None:
-    settings = get_settings()
-    level = getattr(logging, settings.log_level.upper(), logging.INFO)
+def setup_logging(level: str = "INFO") -> None:
+    """Configure JSON structured logging for all loggers."""
+    root = logging.getLogger()
+    root.setLevel(level)
 
-    processors: list = [
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-    ]
+    # Remove existing handlers
+    for handler in root.handlers[:]:
+        root.removeHandler(handler)
 
-    if settings.app_env == "development":
-        processors.append(structlog.dev.ConsoleRenderer())
-    else:
-        processors.append(structlog.processors.JSONRenderer())
+    # JSON handler to stdout
+    json_handler = logging.StreamHandler(sys.stdout)
+    json_handler.setFormatter(jsonlogger.JsonFormatter())
+    root.addHandler(json_handler)
 
-    structlog.configure(
-        processors=processors,
-        wrapper_class=structlog.make_filtering_bound_logger(level),
-        context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(sys.stdout),
-    )
-
-    logging.basicConfig(stream=sys.stdout, level=level)
+    # Suppress noisy libraries
+    for name in ["urllib3", "botocore", "s3transfer", "sqlalchemy"]:
+        logging.getLogger(name).setLevel(logging.WARNING)
 
 
-def get_logger(name: str = "pay_orchestrator") -> structlog.BoundLogger:
-    return structlog.get_logger(name)
+@lru_cache(maxsize=1)
+def get_logger(name: str) -> logging.LoggerAdapter:
+    """Get a logger for a module — cached for performance."""
+    logger = logging.getLogger(name)
+    return logging.LoggerAdapter(logger, {})

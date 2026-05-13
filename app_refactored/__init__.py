@@ -1,1 +1,0 @@
-"""Application root entry point."""

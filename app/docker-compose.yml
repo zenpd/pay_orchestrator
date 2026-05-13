@@ -1,139 +1,70 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  # ============================================================
-  # MULTI-REGION MODE (New - Recommended)
-  # ============================================================
-  
-  api-multiregion:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    ports: ["8000:8000", "8501:8501", "9001:9001"]
-    env_file: .env
-    environment:
-      - PYTHONUNBUFFERED=1
-      - APP_MODE=multiregion
-    volumes: [.:/app]
-    depends_on: [postgres, redis]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    networks: [payment-network]
-    command: |
-      /bin/bash -c "
-      supervisord -c /etc/supervisor/conf.d/services.conf
-      "
-
-  # ============================================================
-  # ORIGINAL MODE (Legacy - Optional)
-  # ============================================================
-  
-  ui:
-    build: { context: ./ui, dockerfile: Dockerfile }
-    ports: ["3000:80"]
-    depends_on: [api]
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    networks: [payment-network]
-
-  api:
-    build: { context: ., dockerfile: Dockerfile }
-    ports: ["8000:8000"]
-    env_file: .env
-    environment:
-      - TEMPORAL_HOST=temporal:7233
-      - REDIS_URL=redis://redis:6379
-      - APP_MODE=legacy
-    depends_on: [postgres, redis, temporal]
-    volumes: [.:/app]
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
-    networks: [payment-network]
-
-  worker-payments:
-    build: { context: ., dockerfile: Dockerfile }
-    env_file: .env
-    environment:
-      - TEMPORAL_HOST=temporal:7233
-      - REDIS_URL=redis://redis:6379
-      - APP_MODE=legacy
-    depends_on:
-      temporal:
-        condition: service_healthy
-    restart: on-failure
-    command: python -m workers.payment_worker
-    networks: [payment-network]
-
-  # ============================================================
-  # SHARED INFRASTRUCTURE
-  # ============================================================
-
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: pay_orchestrator
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes: [pgdata:/var/lib/postgresql/data]
-    ports: ["5432:5432"]
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: payment_orchestrator
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [payment-network]
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [payment-network]
 
-  temporal:
-    image: temporalio/auto-setup:1.24.2
-    ports: ["7233:7233"]
+  backend:
+    build:
+      context: .
+      dockerfile: ../Dockerfile.refactored
+    ports:
+      - "8005:8005"
     environment:
-      - DB=postgres12
-      - DB_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PWD=password
-      - POSTGRES_SEEDS=postgres
-      - DEFAULT_NAMESPACE=pay_orchestrator
-      - DYNAMIC_CONFIG_FILE_PATH=/etc/temporal/dynamic-config.yaml
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/payment_orchestrator
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - ./config/temporal/dynamic-config.yaml:/etc/temporal/dynamic-config.yaml:ro
-    depends_on: [postgres]
-    healthcheck:
-      test: ["CMD-SHELL", "temporal operator namespace describe pay_orchestrator --address $(hostname -i | awk '{print $1}'):7233 >/dev/null 2>&1 && echo ok || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 15
-      start_period: 60s
-    networks: [payment-network]
+      - ./api:/app/api
+      - ./config:/app/config
+      - ./shared:/app/shared
+      - ./agents:/app/agents
+      - ./workflows:/app/workflows
+      - ./db:/app/db
+      - ./observability:/app/observability
+    command: python -m uvicorn api.main:app --host 0.0.0.0 --port 8005 --reload
 
-  temporal-ui:
-    image: temporalio/ui:2.26.2
-    ports: ["8080:8080"]
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
     environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_UI_CORS_ORIGINS=http://localhost:8080
-      - TEMPORAL_UI_DEFAULT_NAMESPACE=pay_orchestrator
-    depends_on: [temporal]
-    networks: [payment-network]
+      - VITE_API_URL=http://localhost:8005/api
+    volumes:
+      - ./ui/src:/app/src
+    depends_on:
+      - backend
 
 volumes:
-  pgdata:
-
-networks:
-  payment-network:
-    driver: bridge
+  postgres_data:

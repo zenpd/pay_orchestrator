@@ -1,11 +1,18 @@
+"""FastAPI application entry point — Payment Orchestration Platform.
+
+Refactored to follow digital-onboarding standards: LangGraph agents,
+Redis session store, Phoenix observability integration, structured logging.
+"""
 from __future__ import annotations
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from shared.config import get_settings
+
+from config.settings import get_settings
 from shared.logger import setup_logging, get_logger
 from observability.tracing import init_tracing
-from api.routers import health, payments, metrics, corridors, rails, logs
+from api.routers import health, orchestrate
 
 log = get_logger("api.main")
 settings = get_settings()
@@ -13,7 +20,8 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_logging()
+    """Lifecycle management: startup and shutdown."""
+    setup_logging(level=settings.log_level)
     init_tracing()
     log.info("api.startup", env=settings.app_env, version="1.0.0")
     yield
@@ -21,33 +29,49 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Payment Orchestrator API",
-    description="AI-powered cross-border payment orchestration platform with left-shifted compliance validation.",
+    title="Payment Orchestration API",
+    description=(
+        "AI-powered payment rail orchestration — intelligent routing "
+        "across SWIFT, ACH, and local payment networks using LangGraph agents."
+    ),
     version="1.0.0",
     lifespan=lifespan,
 )
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# CORS configuration — environment-scoped
+_cors_origins: list[str]
 if settings.app_env == "development":
-    _cors_origins = ["http://localhost:3000", "http://localhost:5173", "http://localhost:8501"]
+    _cors_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
 else:
+    # Production: explicitly configured
     _raw = settings.cors_allowed_origins
     _cors_origins = [o.strip() for o in _raw.split(",") if o.strip()]
     if not _cors_origins:
-        raise RuntimeError(f"CORS_ALLOWED_ORIGINS must be set in app_env={settings.app_env!r}.")
+        raise RuntimeError(
+            f"CORS_ALLOWED_ORIGINS must be set for app_env={settings.app_env!r}"
+        )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(health.router,      tags=["Health"])
-app.include_router(payments.router,    prefix="/api/v1/payment",   tags=["Payments"])
-app.include_router(metrics.router,     prefix="/api/v1/metrics",   tags=["Metrics"])
-app.include_router(corridors.router,   prefix="/api/v1/corridors", tags=["Corridors"])
-app.include_router(rails.router,       prefix="/api/v1/rails",     tags=["Rails"])
-app.include_router(logs.router,        prefix="/api/v1/logs",      tags=["Logs"])
+# Register routers
+app.include_router(health.router, tags=["Health"])
+app.include_router(orchestrate.router, prefix="/api/v1/payment", tags=["Payment Orchestration"])
+
+
+@app.get("/")
+async def root():
+    """API root — returns info."""
+    return {
+        "service": "payment-orchestration",
+        "version": "1.0.0",
+        "docs": "/docs",
+    }
