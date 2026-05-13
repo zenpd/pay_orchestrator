@@ -20,6 +20,27 @@ export interface RailScore {
   feasibility: string
 }
 
+export interface DecisionJustification {
+  selected_rail: string
+  decision_reasoning: string
+  cost_analysis: string
+  speed_analysis: string
+  reliability_analysis: string
+  business_rules_applied: string[]
+  comparative_analysis: Record<string, {
+    composite_score: number
+    vs_selected: number
+    reason: string
+  }>
+}
+
+export interface ComplianceValidation {
+  status: string
+  risk_score: number
+  checks_passed: string[]
+  warnings: string[]
+}
+
 export interface PaymentResponse {
   session_id: string
   stage: string
@@ -29,4 +50,6 @@ export interface PaymentResponse {
   messages: string[]
   errors: string[]
   created_at?: string
+  decision_justification?: DecisionJustification
+  compliance_validation?: ComplianceValidation
 }

@@ -56,6 +56,13 @@ class PaymentState:
     selected_rail: Optional[RailType] = None
     execution_result: Optional[Dict[str, Any]] = None
 
+    # Enhanced decision data (new)
+    rail_scores_dict: Dict[str, Dict[str, Any]] = field(default_factory=dict)  # Detailed rail scores
+    selected_rail_name: Optional[str] = None  # Track by name instead of enum
+    decision_context: Optional[Any] = None  # PaymentContext from ContextCollector
+    compliance_result: Optional[Dict[str, Any]] = None  # ComplianceResult from PolicyReasoner
+    decision_justification: Optional[Dict[str, Any]] = None  # RailDecisionJustification from Optimizer
+
     # Metadata
     messages: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)

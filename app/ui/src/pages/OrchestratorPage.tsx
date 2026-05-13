@@ -5,6 +5,8 @@ import { usePaymentOrchestration } from '../hooks/usePayment'
 import AgentOrchestrationFlow from '../components/orchestration/AgentOrchestrationFlow'
 import RailScoresTable, { type RailScore } from '../components/orchestration/RailScoresTable'
 import PaymentResult from '../components/orchestration/PaymentResult'
+import DecisionJustificationPanel from '../components/orchestration/DecisionJustificationPanel'
+import { AvailableRails } from '../components/orchestration/AvailableRails'
 import { RegionFilter } from '../components/orchestration/RegionFilter'
 
 const MOCK_RAILS: RailScore[] = [
@@ -175,6 +177,9 @@ export const OrchestratorPage: React.FC = () => {
           {/* Region Filter */}
           <RegionFilter selectedRegion={region} onRegionChange={setRegion} />
 
+          {/* Available Rails */}
+          <AvailableRails region={region} />
+
           {/* Payment Form */}
           <div className="card">
             <div className="card-header">
@@ -291,6 +296,17 @@ export const OrchestratorPage: React.FC = () => {
                 estimatedCost={15.5}
                 compositeScore={92}
               />
+
+              {/* Decision Justification */}
+              {result.decision_justification && (
+                <DecisionJustificationPanel
+                  selectedRail={result.selected_rail || 'UNKNOWN'}
+                  amount={formData.amount}
+                  currency={formData.currency}
+                  justification={result.decision_justification}
+                  compliance={result.compliance_validation || { status: 'UNKNOWN', risk_score: 0, checks_passed: [], warnings: [] }}
+                />
+              )}
 
               {/* Rail Scores */}
               {result.rail_scores && (

@@ -74,7 +74,17 @@ class RegionalPaymentHandler(BaseHTTPRequestHandler):
                 }
             }
         elif path.startswith("/api/v1/payment/regions/"):
-            region = path.split("/")[-1].strip("/")
+            # Extract region name - handle both /regions/US and /regions/US/rails
+            path_parts = path.split("/")
+            # path will be like: /api/v1/payment/regions/US or /api/v1/payment/regions/US/rails
+            # path_parts: ['', 'api', 'v1', 'payment', 'regions', 'US'] or ['', 'api', 'v1', 'payment', 'regions', 'US', 'rails']
+            if path_parts[-1] == "rails":
+                region = path_parts[-2]
+            else:
+                region = path_parts[-1]
+            
+            region = region.strip("/")
+            
             if region in REGIONS_DATA:
                 data = REGIONS_DATA[region]
                 response = {
@@ -133,37 +143,86 @@ class RegionalPaymentHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
         
-        # Mock orchestration response
+        # Mock orchestration response with rich decision justification
         region = request_data.get("region", "US")
         amount = request_data.get("amount", 50000)
+        corridor = request_data.get("corridor", "US_UK")
+        
+        # Calculate scores for all rails in region
+        region_data = REGIONS_DATA.get(region, REGIONS_DATA["US"])
+        all_rail_scores = {}
+        
+        for rail_name, rail_data in region_data["rails"].items():
+            # Weighted scoring: speed 40%, cost 30%, reliability 30%
+            composite = (rail_data["speed"] * 0.40 + rail_data["cost"] * 0.30 + rail_data["reliability"] * 0.30)
+            
+            # Business rule: high-value transactions prefer SWIFT
+            if amount > 250000 and "SWIFT" in rail_name:
+                composite += 5
+            
+            all_rail_scores[rail_name] = {
+                "rail_type": rail_name,
+                "composite_score": round(composite, 1),
+                "cost_score": rail_data["cost"],
+                "speed_score": rail_data["speed"],
+                "reliability_score": rail_data["reliability"],
+                "estimated_cost_usd": rail_data["cost_usd"],
+                "estimated_time_hours": rail_data["time_hours"],
+                "feasibility": "FEASIBLE" if rail_data.get("success_rate", 0.95) > 0.90 else "RISKY"
+            }
+        
+        # Find best rail
+        best_rail = max(all_rail_scores.items(), key=lambda x: x[1]["composite_score"])
+        selected_rail_name = best_rail[0]
+        selected_rail_data = best_rail[1]
+        
+        # Generate decision justification
+        decision_justification = {
+            "selected_rail": selected_rail_name,
+            "decision_reasoning": f"Selected {selected_rail_name} based on optimal speed ({selected_rail_data['speed_score']} speed score) and balanced cost/reliability. "
+                                  f"Processing time: {selected_rail_data['estimated_time_hours']} hours with {selected_rail_data['estimated_cost_usd']:.2f} USD fee.",
+            "cost_analysis": f"Transaction cost: USD {selected_rail_data['estimated_cost_usd']:.2f}. Cost efficiency: {selected_rail_data['cost_score']}/100.",
+            "speed_analysis": f"Expected processing time: {selected_rail_data['estimated_time_hours']} hours. Speed score: {selected_rail_data['speed_score']}/100.",
+            "reliability_analysis": f"Success probability: {selected_rail_data['reliability_score']}/100. This rail is {'highly reliable' if selected_rail_data['reliability_score'] > 95 else 'reliable'}.",
+            "business_rules_applied": [
+                "High-value preference for SWIFT" if amount > 250000 else "Standard scoring applied",
+                f"Corridor {corridor} verified"
+            ],
+            "comparative_analysis": {
+                rail_name: {
+                    "composite_score": score["composite_score"],
+                    "vs_selected": round(selected_rail_data["composite_score"] - score["composite_score"], 1),
+                    "reason": f"Lower speed: {score['speed_score']}" if score['speed_score'] < selected_rail_data['speed_score'] 
+                              else f"Higher cost: ${score['estimated_cost_usd']:.2f}"
+                }
+                for rail_name, score in all_rail_scores.items() if rail_name != selected_rail_name
+            }
+        }
         
         response = {
-            "session_id": "session-" + str(amount),
+            "session_id": "session-" + str(int(amount/1000)) + "K-" + region,
             "stage": "completed",
-            "selected_rail": "SWIFT_GPI",
-            "rail_scores": {
-                rail_name: {
-                    "rail_type": rail_name,
-                    "composite_score": (rail_data["speed"] * 0.4 + rail_data["cost"] * 0.3 + rail_data["reliability"] * 0.3),
-                    "cost_score": rail_data["cost"],
-                    "speed_score": rail_data["speed"],
-                    "reliability_score": rail_data["reliability"],
-                    "estimated_cost_usd": rail_data["cost_usd"],
-                    "estimated_time_hours": rail_data["time_hours"],
-                    "feasibility": "FEASIBLE"
-                }
-                for rail_name, rail_data in REGIONS_DATA.get(region, REGIONS_DATA["US"])["rails"].items()
+            "selected_rail": selected_rail_name,
+            "rail_scores": all_rail_scores,
+            "decision_justification": decision_justification,
+            "compliance_validation": {
+                "status": "APPROVED",
+                "risk_score": 0.15,
+                "checks_passed": ["AML_SCREENING", "CORRIDOR_VALIDATION", "LIMIT_CHECK"],
+                "warnings": []
             },
             "execution_result": {
                 "transaction_id": f"TXN-{region}-{int(amount/1000)}K",
-                "rail_used": "SWIFT_GPI",
-                "status": "SUBMITTED"
+                "rail_used": selected_rail_name,
+                "status": "SUBMITTED",
+                "estimated_arrival": f"{selected_rail_data['estimated_time_hours']} hours"
             },
             "messages": [
                 "Analyzed payment parameters",
                 "Scored all available payment rails",
-                "Selected optimal route: SWIFT_GPI",
-                "Payment executed successfully"
+                f"Selected optimal route: {selected_rail_name}",
+                "Compliance validation passed",
+                "Payment orchestrated successfully"
             ],
             "errors": []
         }
