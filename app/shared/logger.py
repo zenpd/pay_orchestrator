@@ -27,8 +27,22 @@ def setup_logging(level: str = "INFO") -> None:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 
-@lru_cache(maxsize=1)
-def get_logger(name: str) -> logging.LoggerAdapter:
+class StructlogAdapter(logging.LoggerAdapter):
+    """Logger adapter that accepts structlog-style keyword arguments."""
+
+    def process(self, msg, kwargs):
+        extra_kwargs = {k: v for k, v in kwargs.items() if k not in (
+            'exc_info', 'stack_info', 'stacklevel', 'extra'
+        )}
+        if extra_kwargs:
+            msg = msg + " " + " ".join(f"{k}={v}" for k, v in extra_kwargs.items())
+            for k in extra_kwargs:
+                kwargs.pop(k)
+        return msg, kwargs
+
+
+@lru_cache(maxsize=128)
+def get_logger(name: str) -> StructlogAdapter:
     """Get a logger for a module — cached for performance."""
     logger = logging.getLogger(name)
-    return logging.LoggerAdapter(logger, {})
+    return StructlogAdapter(logger, {})
