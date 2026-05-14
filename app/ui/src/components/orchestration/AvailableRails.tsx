@@ -20,7 +20,7 @@ export function AvailableRails({ region }: AvailableRailsProps) {
 
   useEffect(() => {
     setLoading(true)
-    fetch(`http://localhost:8005/api/v1/payment/regions/${region}/rails`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/payment/regions/${region}/rails`)
       .then(res => res.json())
       .then(data => {
         if (data.rails) setRails(data.rails)

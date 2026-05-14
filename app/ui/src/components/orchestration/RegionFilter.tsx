@@ -12,7 +12,7 @@ export const RegionFilter: React.FC<RegionFilterProps> = ({ selectedRegion, onRe
 
   useEffect(() => {
     setLoading(true)
-    fetch('http://localhost:8005/api/v1/payment/regions')
+    fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/payment/regions`)
       .then(res => res.json())
       .then(data => {
         const regionList = (data.regions || ['US', 'UK', 'SA', 'EUR']).map((r: string) => ({

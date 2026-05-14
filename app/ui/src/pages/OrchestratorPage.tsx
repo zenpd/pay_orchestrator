@@ -92,7 +92,7 @@ export const OrchestratorPage: React.FC = () => {
 
   // Load regional data on region change
   useEffect(() => {
-    fetch(`http://localhost:8005/api/v1/payment/regions/${region}/rails`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/payment/regions/${region}/rails`)
       .then(res => res.json())
       .then(data => {
         if (data.corridors) setCorridors(data.corridors)
