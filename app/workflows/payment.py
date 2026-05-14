@@ -156,11 +156,11 @@ def node_execute_payment(state: PaymentState) -> PaymentState:
     return state
 
 
-def router_to_execute(state: PaymentState) -> Literal["node_execute_payment", "node_failed"]:
+def router_to_execute(state: PaymentState) -> Literal["execute", "failed"]:
     """Route after rail selection."""
     if state.selected_rail:
-        return "node_execute_payment"
-    return "node_failed"
+        return "execute"
+    return "failed"
 
 
 def node_failed(state: PaymentState) -> PaymentState:
