@@ -4,17 +4,19 @@ trigger:
       - main
   paths:
     include:
-      - app_refactored/ui/**
+      - app/ui/**
       - azure-pipelines-fe.yml
     exclude:
-      - app_refactored/api/**
+      - app/api/**
       - README.md
 
 variables:
-  acrName: 'zafacr-gqfyc3h8eya2djey.azurecontainerapps.io'
+  acrLoginServer: 'zafacr-gqfyc3h8eya2djey.azurecr.io'
+  acrName: 'zafacr'
   resourceGroup: 'Zenlabs-Agent-Foundry'
   frontendAppName: 'payment-orchestrator-fe'
   frontendRepo: 'payment-orchestrator-fe'
+  viteApiBaseUrl: 'https://payment-orchestrator-be.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io'
   tag: 'latest'
 
 stages:
@@ -32,13 +34,12 @@ stages:
           inputs:
             command: buildAndPush
             repository: $(frontendRepo)
-            dockerfile: $(Build.SourcesDirectory)/app_refactored/ui/Dockerfile
-            containerRegistry: 'zafacr'
+            dockerfile: $(Build.SourcesDirectory)/app/ui/Dockerfile
+            containerRegistry: 'zafacr-service-connection'
             tags: |
               $(tag)
               $(Build.BuildId)
-            arguments: |
-              --build-arg BUILDKIT_INLINE_CACHE=1
+            arguments: --build-arg VITE_API_BASE_URL=$(viteApiBaseUrl)
 
 - stage: Deploy
   displayName: Deploy to Azure Container Apps
@@ -65,6 +66,5 @@ stages:
                     az containerapp update \
                       --name $(frontendAppName) \
                       --resource-group $(resourceGroup) \
-                      --image $(acrName)/$(frontendRepo):$(tag) \
-                      --set-env-vars \
-                        VITE_API_URL="https://payment-orchestrator-be.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io/api"
+                      --image $(acrLoginServer)/$(frontendRepo):$(Build.BuildId) \
+                      --revision-suffix "build-$(Build.BuildId)"

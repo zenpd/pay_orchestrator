@@ -109,7 +109,7 @@ export default function RailScoresTable({ rails, selectedRail }: RailScoresTable
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2 text-gray-600">
                     <DollarSign size={14} />
-                    <span className="text-xs font-medium">${rail.estimatedCost.toFixed(2)}</span>
+                    <span className="text-xs font-medium">${(rail.estimatedCost ?? 0).toFixed(2)}</span>
                   </div>
                 </td>
               </tr>

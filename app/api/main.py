@@ -41,18 +41,14 @@ app = FastAPI(
 # CORS configuration — environment-scoped
 _cors_origins: list[str]
 if settings.app_env == "development":
-    _cors_origins = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ]
+    # Allow all origins in development for easy local testing
+    _cors_origins = ["*"]
 else:
-    # Production: explicitly configured
+    # Production/staging: use configured list, fall back to wildcard if unset
     _raw = settings.cors_allowed_origins
     _cors_origins = [o.strip() for o in _raw.split(",") if o.strip()]
     if not _cors_origins:
-        raise RuntimeError(
-            f"CORS_ALLOWED_ORIGINS must be set for app_env={settings.app_env!r}"
-        )
+        _cors_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

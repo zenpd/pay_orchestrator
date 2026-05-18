@@ -26,7 +26,7 @@ export const PaymentResult: React.FC<PaymentResultProps> = ({ result }) => {
         <div>
           <p className="text-gray-600 text-sm">Total Cost</p>
           <p className="font-semibold">
-            ${result.rail_scores[result.selected_rail || '']?.estimated_cost_usd.toFixed(2) || '0.00'}
+            ${(result.rail_scores[result.selected_rail || '']?.estimated_cost_usd ?? 0).toFixed(2)}
           </p>
         </div>
       </div>

@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react'
 
 interface Rail {
   name: string
-  speed: number
-  cost: number
-  reliability: number
-  cost_usd: number
-  time_hours: number
+  speed_score: number
+  cost_score: number
+  reliability_score: number
+  estimated_cost_usd: number
+  estimated_time_hours: number
 }
 
 interface AvailableRailsProps {
@@ -70,7 +70,7 @@ export function AvailableRails({ region }: AvailableRailsProps) {
                     <h4 className="font-semibold text-gray-900">{rail.name}</h4>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-indigo-600">${rail.cost_usd.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-indigo-600">${(rail.estimated_cost_usd ?? 0).toFixed(2)}</p>
                     <p className="text-xs text-gray-500">per transaction</p>
                   </div>
                 </div>
@@ -78,16 +78,16 @@ export function AvailableRails({ region }: AvailableRailsProps) {
                 <div className="grid grid-cols-3 gap-3">
                   {/* Speed */}
                   <div className="flex items-center gap-2">
-                    <Clock size={16} className={getSpeedColor(rail.speed)} />
+                    <Clock size={16} className={getSpeedColor(rail.speed_score)} />
                     <div>
                       <p className="text-xs text-gray-500">Speed</p>
                       <p className="text-sm font-semibold text-gray-900">
-                        {rail.time_hours < 1 ? `${(rail.time_hours * 60).toFixed(0)}m` : `${rail.time_hours}h`}
+                        {(rail.estimated_time_hours ?? 0) < 1 ? `${((rail.estimated_time_hours ?? 0) * 60).toFixed(0)}m` : `${rail.estimated_time_hours}h`}
                       </p>
                       <div className="w-16 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
                         <div
-                          className={`h-full ${rail.speed >= 90 ? 'bg-green-500' : rail.speed >= 75 ? 'bg-blue-500' : 'bg-amber-500'}`}
-                          style={{ width: `${rail.speed}%` }}
+                          className={`h-full ${rail.speed_score >= 90 ? 'bg-green-500' : rail.speed_score >= 75 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                          style={{ width: `${rail.speed_score}%` }}
                         />
                       </div>
                     </div>
@@ -95,14 +95,14 @@ export function AvailableRails({ region }: AvailableRailsProps) {
 
                   {/* Cost Efficiency */}
                   <div className="flex items-center gap-2">
-                    <DollarSign size={16} className={getCostColor(rail.cost)} />
+                    <DollarSign size={16} className={getCostColor(rail.cost_score)} />
                     <div>
                       <p className="text-xs text-gray-500">Cost</p>
-                      <p className="text-sm font-semibold text-gray-900">{rail.cost}/100</p>
+                      <p className="text-sm font-semibold text-gray-900">{rail.cost_score}/100</p>
                       <div className="w-16 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
                         <div
-                          className={`h-full ${rail.cost >= 85 ? 'bg-green-500' : rail.cost >= 60 ? 'bg-blue-500' : 'bg-red-500'}`}
-                          style={{ width: `${rail.cost}%` }}
+                          className={`h-full ${rail.cost_score >= 85 ? 'bg-green-500' : rail.cost_score >= 60 ? 'bg-blue-500' : 'bg-red-500'}`}
+                          style={{ width: `${rail.cost_score}%` }}
                         />
                       </div>
                     </div>
@@ -113,11 +113,11 @@ export function AvailableRails({ region }: AvailableRailsProps) {
                     <TrendingUp size={16} className="text-purple-600" />
                     <div>
                       <p className="text-xs text-gray-500">Reliability</p>
-                      <p className="text-sm font-semibold text-gray-900">{rail.reliability}%</p>
+                      <p className="text-sm font-semibold text-gray-900">{rail.reliability_score}%</p>
                       <div className="w-16 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
                         <div
                           className="h-full bg-purple-500"
-                          style={{ width: `${rail.reliability}%` }}
+                          style={{ width: `${rail.reliability_score}%` }}
                         />
                       </div>
                     </div>

@@ -140,9 +140,9 @@ export default function DecisionJustificationPanel({
                             <p className="text-xs text-gray-500 mt-1">{analysis.reason}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-lg font-bold text-gray-900">{analysis.composite_score.toFixed(1)}</p>
-                            <p className={`text-xs font-semibold ${analysis.vs_selected < 0 ? 'text-red-600' : 'text-gray-500'}`}>
-                              {analysis.vs_selected > 0 ? '+' : ''}{analysis.vs_selected.toFixed(1)} pts
+                            <p className="text-lg font-bold text-gray-900">{(analysis.composite_score ?? 0).toFixed(1)}</p>
+                            <p className={`text-xs font-semibold ${(analysis.vs_selected ?? 0) < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                              {(analysis.vs_selected ?? 0) > 0 ? '+' : ''}{(analysis.vs_selected ?? 0).toFixed(1)} pts
                             </p>
                           </div>
                         </div>
@@ -188,11 +188,11 @@ export default function DecisionJustificationPanel({
                       <div className="w-32 h-2 rounded-full bg-gray-200 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-green-500 to-red-500"
-                          style={{ width: `${compliance.risk_score * 100}%` }}
+                          style={{ width: `${(compliance.risk_score ?? 0) * 100}%` }}
                         />
                       </div>
                       <span className="text-sm font-semibold text-gray-900 w-12">
-                        {(compliance.risk_score * 100).toFixed(0)}%
+                        {((compliance.risk_score ?? 0) * 100).toFixed(0)}%
                       </span>
                     </div>
                   </div>

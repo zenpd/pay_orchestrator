@@ -36,10 +36,10 @@ export const RailScoresTable: React.FC<RailScoresTableProps> = ({ scores, select
               )}
             >
               <td className="px-4 py-2">{railType}</td>
-              <td className={clsx('px-4 py-2 text-right', getScoreColor(score.composite_score))}>
-                {score.composite_score.toFixed(1)}
+              <td className={clsx('px-4 py-2 text-right', getScoreColor(score.composite_score ?? 0))}>
+                {(score.composite_score ?? 0).toFixed(1)}
               </td>
-              <td className="px-4 py-2 text-right">${score.estimated_cost_usd.toFixed(2)}</td>
+              <td className="px-4 py-2 text-right">${(score.estimated_cost_usd ?? 0).toFixed(2)}</td>
               <td className="px-4 py-2 text-right">{score.estimated_time_hours}h</td>
               <td className="px-4 py-2 text-center">
                 {selectedRail === railType ? (

@@ -56,24 +56,65 @@ async def orchestrate_payment(request: PaymentRequestSchema) -> PaymentResponseS
             created_at=datetime.utcnow().isoformat(),
         )
 
-        # Invoke workflow
-        final_state = payment_orchestration_graph.invoke(state)
+        # Invoke workflow — LangGraph may return a dict or a PaymentState dataclass
+        raw = payment_orchestration_graph.invoke(state)
 
-        # Format response
-        rail_scores_response = {
-            rail_type.value: RailScoreSchema(**score.__dict__)
-            for rail_type, score in final_state.rail_scores.items()
-        }
+        # Normalise to plain values regardless of return type (dict vs dataclass)
+        if isinstance(raw, dict):
+            final_stage = raw.get("stage", "failed")
+            rail_scores_dict: dict = raw.get("rail_scores_dict") or {}
+            selected_rail_name: str | None = raw.get("selected_rail_name")
+            selected_rail_enum = raw.get("selected_rail")
+            final_execution_result = raw.get("execution_result")
+            final_messages = raw.get("messages") or []
+            final_errors = raw.get("errors") or []
+            final_created_at = raw.get("created_at")
+        else:
+            final_stage = raw.stage
+            rail_scores_dict = getattr(raw, "rail_scores_dict", {}) or {}
+            selected_rail_name = getattr(raw, "selected_rail_name", None)
+            selected_rail_enum = getattr(raw, "selected_rail", None)
+            final_execution_result = raw.execution_result
+            final_messages = raw.messages or []
+            final_errors = raw.errors or []
+            final_created_at = raw.created_at
+
+        # Build rail scores response from the string-keyed dict (all rails preserved)
+        rail_scores_response: dict = {}
+        for rail_name, score_data in rail_scores_dict.items():
+            if isinstance(score_data, dict):
+                rail_scores_response[rail_name] = RailScoreSchema(
+                    rail_type=score_data.get("rail_type", rail_name),
+                    composite_score=score_data.get("composite_score", 0.0),
+                    cost_score=score_data.get("cost_score", 0.0),
+                    speed_score=score_data.get("speed_score", 0.0),
+                    reliability_score=score_data.get("reliability_score", 0.0),
+                    estimated_cost_usd=score_data.get("estimated_cost_usd", 0.0),
+                    estimated_time_hours=score_data.get("estimated_time_hours", 0.0),
+                    feasibility=score_data.get("feasibility", "UNKNOWN"),
+                )
+
+        # Resolve selected rail label (prefer human-readable name, fall back to enum value)
+        if selected_rail_name:
+            selected_rail_label = selected_rail_name
+        elif selected_rail_enum is not None:
+            selected_rail_label = (
+                selected_rail_enum.value
+                if hasattr(selected_rail_enum, "value")
+                else str(selected_rail_enum)
+            )
+        else:
+            selected_rail_label = None
 
         return PaymentResponseSchema(
             session_id=session_id,
-            stage=final_state.stage,
-            selected_rail=final_state.selected_rail.value if final_state.selected_rail else None,
+            stage=final_stage,
+            selected_rail=selected_rail_label,
             rail_scores=rail_scores_response,
-            execution_result=final_state.execution_result,
-            messages=final_state.messages,
-            errors=final_state.errors,
-            created_at=datetime.fromisoformat(final_state.created_at) if final_state.created_at else None,
+            execution_result=final_execution_result,
+            messages=final_messages,
+            errors=final_errors,
+            created_at=datetime.fromisoformat(final_created_at) if final_created_at else None,
         )
 
     except Exception as e:

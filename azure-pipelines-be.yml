@@ -4,22 +4,24 @@ trigger:
       - main
   paths:
     include:
-      - app_refactored/api/**
-      - app_refactored/config/**
-      - app_refactored/shared/**
-      - app_refactored/agents/**
-      - app_refactored/workflows/**
-      - app_refactored/db/**
-      - app_refactored/observability/**
-      - app_refactored/workers/**
+      - app/api/**
+      - app/config/**
+      - app/shared/**
+      - app/agents/**
+      - app/workflows/**
+      - app/db/**
+      - app/observability/**
+      - app/workers/**
+      - app/services/**
       - Dockerfile.refactored
       - requirements_refactored.txt
     exclude:
-      - app_refactored/ui/**
+      - app/ui/**
       - README.md
 
 variables:
-  acrName: 'zafacr-gqfyc3h8eya2djey.azurecontainerapps.io'
+  acrLoginServer: 'zafacr-gqfyc3h8eya2djey.azurecr.io'
+  acrName: 'zafacr'
   resourceGroup: 'Zenlabs-Agent-Foundry'
   backendAppName: 'payment-orchestrator-be'
   backendRepo: 'payment-orchestrator-be'
@@ -41,12 +43,10 @@ stages:
             command: buildAndPush
             repository: $(backendRepo)
             dockerfile: $(Build.SourcesDirectory)/Dockerfile.refactored
-            containerRegistry: 'zafacr'
+            containerRegistry: 'zafacr-service-connection'
             tags: |
               $(tag)
               $(Build.BuildId)
-            arguments: |
-              --build-arg BUILDKIT_INLINE_CACHE=1
 
 - stage: Deploy
   displayName: Deploy to Azure Container Apps
@@ -73,11 +73,11 @@ stages:
                     az containerapp update \
                       --name $(backendAppName) \
                       --resource-group $(resourceGroup) \
-                      --image $(acrName)/$(backendRepo):$(tag) \
+                      --image $(acrLoginServer)/$(backendRepo):$(Build.BuildId) \
+                      --revision-suffix "build-$(Build.BuildId)" \
                       --set-env-vars \
                         APP_ENV=production \
-                        DATABASE_URL="@keyvault(Zenlabs-Agent-Foundry-payment-db-url)" \
-                        REDIS_URL="@keyvault(Zenlabs-Agent-Foundry-payment-redis-url)" \
+                        CORS_ALLOWED_ORIGINS="https://payment-orchestrator-fe.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io,http://localhost:5174,http://localhost:5173"\
                         AZURE_OPENAI_ENDPOINT="@keyvault(Zenlabs-Agent-Foundry-openai-endpoint)" \
                         AZURE_OPENAI_API_KEY="@keyvault(Zenlabs-Agent-Foundry-openai-key)" \
                         CORS_ALLOWED_ORIGINS="https://payment-orchestrator-fe.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io"

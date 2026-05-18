@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM mcr.microsoft.com/devcontainers/javascript-node:18 AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN npm run build
 
-FROM node:18-alpine
+FROM mcr.microsoft.com/devcontainers/javascript-node:18
 
 WORKDIR /app
 

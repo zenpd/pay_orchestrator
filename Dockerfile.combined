@@ -1,0 +1,79 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY app/api ./api
+COPY app/config ./config
+COPY app/shared ./shared
+COPY app/agents ./agents
+COPY app/workflows ./workflows
+COPY app/db ./db
+COPY app/observability ./observability
+COPY app/workers ./workers
+COPY app/services ./services
+COPY app/evaluations ./evaluations
+
+# Copy built frontend
+COPY app/ui/dist ./ui_dist
+
+# Copy mock backend or startup script
+COPY mock_backend.py .
+
+# Create non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup --no-create-home appuser
+
+# Create startup script
+RUN cat > /app/start.sh << 'EOF'
+#!/bin/bash
+set -e
+
+# Configure nginx to serve React frontend
+cat > /etc/nginx/nginx.conf << 'NGINX'
+events {
+    worker_connections 1024;
+}
+
+http {
+    server {
+        listen 5173;
+        root /app/ui_dist;
+        index index.html;
+        
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+        
+        location /api {
+            proxy_pass http://localhost:8005;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+}
+NGINX
+
+# Start backend on 8005
+python mock_backend.py &
+BACKEND_PID=$!
+
+# Start nginx on 5173
+nginx -g "daemon off;"
+
+# Keep processes running
+wait $BACKEND_PID
+EOF
+
+chmod +x /app/start.sh
+
+USER appuser
+EXPOSE 5173 8005
+
+CMD ["/app/start.sh"]
